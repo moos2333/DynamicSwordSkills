@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made damage bonus per level, duration formula and exhaustion configurable.
+ * - Made damage bonus per level, duration formula, attack window and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -209,7 +209,7 @@ public class EndingBlow extends SkillActive
 
 	@Override
 	protected boolean onActivated(World world, EntityPlayer player) {
-		activeTimer = 3; // gives server some time for client attack to occur
+		activeTimer = Config.getEndingBlowAttackWindow();
 		entityHit = null;
 		IComboSkill skill = DSSPlayerInfo.get(player).getComboSkill();
 		if (skill != null && skill.getCombo() != null) {

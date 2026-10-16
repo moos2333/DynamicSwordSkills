@@ -203,13 +203,13 @@ death.attack.indirectSword.item=%1$s 被 %2$s 使用 %3$s 击杀
 entity.dynamicswordskills.leapingblow.name=跳劈
 entity.dynamicswordskills.swordbeam.name=剑气
 
-item.dss.skillorb.name=%s 技能球
+item.dss.skillorb.name=%s技能球
 item.dss.skill_sword.wood.name=木质%s剑
 item.dss.skill_sword.stone.name=石质%s剑
 item.dss.skill_sword.iron.name=铁质%s剑
 item.dss.skill_sword.gold.name=金质%s剑
 item.dss.skill_sword.emerald.name=钻石%s剑
-item.dss.training_stick.name=%s 训练杖
+item.dss.training_stick.name=%s训练杖
 tooltip.dss.skillorb.desc.level=等级: %1$s / %2$s
 tooltip.dss.skillorb.desc.0=右键点击以学习
 tooltip.dss.skill_provider.desc.skill=授予 %2$s %1$s 级

@@ -22,7 +22,7 @@
  * - Added configurable Sword Beam health allowance, damage factors, range and exhaustion.
  * - Added configurable Back Slice damage bonus and exhaustion.
  * - Added configurable Leaping Blow damage bonus, lifespan, range and exhaustion.
- * - Added configurable Ending Blow damage bonus, duration formula and exhaustion.
+ * - Added configurable Ending Blow damage bonus, duration formula, attack window and exhaustion.
  * - Added configurable Mortal Draw damage bonus and exhaustion.
  * - Added configurable Basic Sword range, combo size and combo damage bonus.
  */
@@ -137,6 +137,7 @@ public class Config
 	private static float endingBlowDamageBonusPerLevel;
 	private static int endingBlowDurationBase;
 	private static int endingBlowDurationPerLevel;
+	private static int endingBlowAttackWindow;
 	private static float endingBlowExhaustionBase;
 	private static float endingBlowExhaustionPerLevel;
 	private static int mortalDrawDamageBonusPerLevel;
@@ -309,6 +310,8 @@ public class Config
 				"Base duration (in ticks) of the defense-down effect for Ending Blow", 0, 1000).getInt();
 		endingBlowDurationPerLevel = skillsConfig.get("endingBlow", "durationPerLevel", 5,
 				"Duration reduction per level for Ending Blow (subtracted from base duration)", 0, 100).getInt();
+		endingBlowAttackWindow = skillsConfig.get("endingBlow", "attackWindow", 3,
+				"Number of ticks after activation during which the player may land a successful Ending Blow (3 = vanilla behavior; higher = more forgiving). Values below 3 may cause the server to miss legitimate client hits due to network latency.", 1, 100).getInt();
 		endingBlowExhaustionBase = (float) skillsConfig.get("endingBlow", "exhaustionBase", 2.0D,
 				"Base exhaustion for Ending Blow", 0.0D, 100.0D).getDouble();
 		endingBlowExhaustionPerLevel = (float) skillsConfig.get("endingBlow", "exhaustionPerLevel", 0.1D,
@@ -424,6 +427,7 @@ public class Config
 	public static float getEndingBlowDamageBonusPerLevel() { return endingBlowDamageBonusPerLevel; }
 	public static int getEndingBlowDurationBase() { return endingBlowDurationBase; }
 	public static int getEndingBlowDurationPerLevel() { return endingBlowDurationPerLevel; }
+	public static int getEndingBlowAttackWindow() { return endingBlowAttackWindow; }
 	public static float getEndingBlowExhaustionBase() { return endingBlowExhaustionBase; }
 	public static float getEndingBlowExhaustionPerLevel() { return endingBlowExhaustionPerLevel; }
 	public static int getMortalDrawDamageBonusPerLevel() { return mortalDrawDamageBonusPerLevel; }
