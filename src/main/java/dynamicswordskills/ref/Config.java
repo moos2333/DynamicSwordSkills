@@ -504,7 +504,7 @@ public class Config
 
 	public static void syncClientSettings(SyncConfigPacket msg) {
 		if (!msg.isMessageValid()) {
-			logger.error("Invalid SyncConfigPacket attempting to process!");
+			DynamicSwordSkills.logger.error("Invalid SyncConfigPacket attempting to process!");
 			return;
 		}
 		Config.baseSwingSpeed = msg.baseSwingSpeed;
