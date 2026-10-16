@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made health allowance, base damage factor and per-level damage factor configurable.
+ * - Made health allowance, base damage factor, per-level damage factor, range and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -83,7 +83,7 @@ public class SwordBeam extends SkillActive
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
 		desc.add(getDamageDisplay(getDamageFactor(player), false) + "%");
-		desc.add(getRangeDisplay(12 + level));
+		desc.add(getRangeDisplay(12 + (level * Config.getSwordBeamRangePerLevel())));
 		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.health", String.format("%.1f", getHealthAllowance(level) / 2.0F)).getUnformattedText());
 		desc.add(getExhaustionDisplay(getExhaustion()));
 	}
@@ -100,7 +100,7 @@ public class SwordBeam extends SkillActive
 
 	@Override
 	protected float getExhaustion() {
-		return 2.0F - (0.1F * level);
+		return Config.getSwordBeamExhaustionBase() - (level * Config.getSwordBeamExhaustionPerLevel());
 	}
 
 	/** Returns the health allowance for Sword Beam at the given level, ignoring the global requireFullHealth setting */

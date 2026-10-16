@@ -17,8 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made Ending Blow damage bonus per level configurable.
- * - Made Ending Blow duration formula configurable.
+ * - Made damage bonus per level, duration formula and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -131,7 +130,7 @@ public class EndingBlow extends SkillActive
 
 	@Override
 	protected float getExhaustion() {
-		return 2.0F - (level * 0.1F);
+		return Config.getEndingBlowExhaustionBase() - (level * Config.getEndingBlowExhaustionPerLevel());
 	}
 
 	/** Returns the duration of the defense down effect */

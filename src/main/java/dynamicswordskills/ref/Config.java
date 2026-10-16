@@ -17,18 +17,19 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Added configurable Armor Break damage multiplier.
- * - Added configurable Sword Beam health allowance, base damage factor, per-level damage factor and range.
- * - Added configurable Back Slice damage bonus per level.
- * - Added configurable Leaping Blow damage bonus per level.
- * - Added configurable Leaping Blow lifespan and range per level.
- * - Added configurable Ending Blow damage bonus per level and duration formula.
- * - Added configurable Mortal Draw damage bonus per level.
+ * - Split skill-related options into a separate config file: DynamicSwordSkills-skills.cfg
+ * - Added configurable Armor Break damage bonus per level and exhaustion.
+ * - Added configurable Sword Beam health allowance, damage factors, range and exhaustion.
+ * - Added configurable Back Slice damage bonus and exhaustion.
+ * - Added configurable Leaping Blow damage bonus, lifespan, range and exhaustion.
+ * - Added configurable Ending Blow damage bonus, duration formula and exhaustion.
+ * - Added configurable Mortal Draw damage bonus and exhaustion.
  * - Added configurable Basic Sword range, combo size and combo damage bonus.
  */
 
 package dynamicswordskills.ref;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,13 +60,11 @@ import swordskillsapi.api.item.WeaponRegistry;
 
 public class Config
 {
-	/** Config ID for GuiConfig */
 	public static final String CONFIG_ID = "dss.config";
 	public static Configuration config;
-	/** Flag set after {@link #postInit()} has been called */
+	public static Configuration skillsConfig;
 	private static boolean loaded;
 	/*================== CLIENT SIDE SETTINGS =====================*/
-	/* General client settings */
 	private static boolean enableAdditionalControls;
 	private static boolean enableAutoTarget;
 	private static boolean enableTargetPassive;
@@ -73,7 +72,6 @@ public class Config
 	private static boolean allowVanillaControls;
 	private static boolean requireDoubleTap;
 	private static boolean requireLockOn;
-	/* Skill Manual GUI */
 	private static boolean clickedGroupFilterSound;
 	private static boolean clickedPageSound;
 	private static boolean clickedSkillSound;
@@ -83,14 +81,12 @@ public class Config
 	private static boolean showSkillGroupTooltips;
 	private static boolean showUnknownSkills;
 	private static Map<String, Set<String>> skillGroupLists = Maps.<String, Set<String>>newHashMap();
-	/* Combo HUD */
 	public static int comboHudDisplayTime;
 	private static int comboHudMaxHits;
 	public static HALIGN comboHudXAlign;
 	public static VALIGN comboHudYAlign;
 	public static int comboHudXOffset;
 	public static int comboHudYOffset;
-	/* Ending Blow HUD */
 	public static int endingBlowHudDisplayTime;
 	public static boolean endingBlowHudResult;
 	public static boolean endingBlowHudText;
@@ -99,16 +95,11 @@ public class Config
 	public static int endingBlowHudXOffset;
 	public static int endingBlowHudYOffset;
 	/*================== WEAPON REGISTRY =====================*/
-	/** Items that are considered Swords for all intents and purposes */
 	private static String[] swords = new String[0];
-	/** Items that are considered Melee Weapons for all intents and purposes */
 	private static String[] weapons = new String[0];
-	/** Items that are forbidden from being considered as Swords */
 	private static String[] forbidden_swords = new String[0];
-	/** Items that are forbidden from being considered as Melee Weapons */
 	private static String[] forbidden_weapons = new String[0];
 	/*================== SERVER =====================*/
-	/* General server settings */
 	private static boolean backSliceDisarmorPlayer;
 	private static Set<String> bannedSkills = Sets.<String>newHashSet();
 	private static int baseSwingSpeed;
@@ -119,27 +110,39 @@ public class Config
 	private static boolean skillSwordCreative;
 	private static int skillSwordCreativeLevel;
 	private static boolean skillSwordRandom;
-	/* Skills modifiers */
-	private static float armorBreakDamageMultiplier;
+	/*================== SKILL MODIFIERS (from skillsConfig) =====================*/
+	private static float armorBreakDamageBonusPerLevel;
+	private static float armorBreakExhaustionBase;
+	private static float armorBreakExhaustionPerLevel;
 	private static float swordBeamHealthAllowancePerLevel;
 	private static int swordBeamBaseDamageFactor;
 	private static int swordBeamDamageFactorPerLevel;
 	private static int swordBeamRangePerLevel;
+	private static float swordBeamExhaustionBase;
+	private static float swordBeamExhaustionPerLevel;
 	private static int swordBasicRangeBase;
 	private static int swordBasicRangePerLevel;
 	private static int swordBasicComboSizeBase;
 	private static int swordBasicComboSizePerLevel;
 	private static float swordBasicComboDamageBonus;
 	private static float backSliceDamageBonusPerLevel;
+	private static float backSliceExhaustionBase;
+	private static float backSliceExhaustionPerLevel;
 	private static float leapingBlowDamageBonusPerLevel;
 	private static int leapingBlowLifespanPerLevel;
 	private static double leapingBlowRangeBase;
 	private static double leapingBlowRangePerLevel;
+	private static float leapingBlowExhaustionBase;
+	private static float leapingBlowExhaustionPerLevel;
 	private static float endingBlowDamageBonusPerLevel;
 	private static int endingBlowDurationBase;
 	private static int endingBlowDurationPerLevel;
+	private static float endingBlowExhaustionBase;
+	private static float endingBlowExhaustionPerLevel;
 	private static int mortalDrawDamageBonusPerLevel;
-	/* Loot / drops settings */
+	private static float mortalDrawExhaustionBase;
+	private static float mortalDrawExhaustionPerLevel;
+	/*================== DROPS =====================*/
 	private static boolean bonusOrbEnable;
 	private static int orbLootWeight;
 	private static Map<Integer, Float> orbDropChance;
@@ -153,12 +156,17 @@ public class Config
 	public static void init(FMLPreInitializationEvent event) {
 		config = new Configuration(event.getSuggestedConfigurationFile());
 		config.load();
+
+		File skillsFile = new File(event.getModConfigurationDirectory(), "DynamicSwordSkills-skills.cfg");
+		skillsConfig = new Configuration(skillsFile);
+		skillsConfig.load();
+
 		refreshClient();
 		refreshServer();
+		refreshSkills();
 	}
 
 	public static void refreshClient() {
-		/* General client settings */
 		enableAdditionalControls = config.get(Configuration.CATEGORY_CLIENT, "dss.config.client.enableAdditionalControls", false, "Enables additional WASD-equivalent keybindings for activating skills with e.g. a gamepad").setRequiresMcRestart(true).getBoolean(false);
 		enableAutoTarget = config.get(Configuration.CATEGORY_CLIENT, "dss.config.client.enableAutoTarget", true, "Enable auto-targeting when locked on and the current target becomes invalid").getBoolean(true);
 		enableTargetPassive = config.get(Configuration.CATEGORY_CLIENT, "dss.config.client.enableTargetPassive", true, "Allow targeting passive mobs with the lock-on mechanic").getBoolean(true);
@@ -170,7 +178,6 @@ public class Config
 		}
 		requireDoubleTap = config.get(Configuration.CATEGORY_CLIENT, "dss.config.client.requireDoubleTap", true, "Require double-tap for Dodge and Parry (always required when Vanilla Controls are enabled)").getBoolean(true);
 		requireLockOn = config.get(Configuration.CATEGORY_CLIENT, "dss.config.client.requireLockOn", false, "Require locking on to activate skills").getBoolean(false);
-		/* Skill Manual GUI */
 		clickedGroupFilterSound = config.get("skillGui", "dss.config.client.skillGui.clickedGroupFilterSound", true, "Play a sound when applying or removing a Skill Group filter").getBoolean(true);
 		clickedPageSound = config.get("skillGui", "dss.config.client.skillGui.clickedPageSound", true, "Play a sound when the page index changes").getBoolean(true);
 		clickedSkillSound = config.get("skillGui", "dss.config.client.skillGui.clickedSkillSound", true, "Play a sound when clicking on a Skill entry").getBoolean(true);
@@ -182,7 +189,6 @@ public class Config
 		if (Config.loaded) {
 			refreshSkillGroups();
 		}
-		/* Combo HUD */
 		String[] xalign = {"left", "center", "right"};
 		String[] yalign = {"top", "center", "bottom"};
 		comboHudDisplayTime = config.get("comboHud", "dss.config.client.comboHud.displayTime", 5000, "Number of milliseconds Combo HUD will remain on screen (0 to disable)", 0, 20000).getInt();
@@ -191,7 +197,6 @@ public class Config
 		comboHudXOffset = config.get("comboHud", "dss.config.client.comboHud.xoffset", 0, "Number of pixels to offset HUD alignment on the X-Axis").getInt();
 		comboHudYAlign = VALIGN.fromString(config.get("comboHud", "dss.config.client.comboHud.yalign", "top", "Base HUD alignment on the Y-Axis").setValidValues(yalign).getString());
 		comboHudYOffset = config.get("comboHud", "dss.config.client.comboHud.yoffset", 0, "Number of pixels to offset HUD alignment on the Y-Axis").getInt();
-		/* Ending Blow HUD */
 		endingBlowHudDisplayTime = config.get("endingBlowHud", "dss.config.client.endingBlowHud.displayTime", 1000, "Number of milliseconds Ending Blow HUD will remain on screen (0 to disable)", 0, 20000).getInt();
 		endingBlowHudResult = config.get("endingBlowHud", "dss.config.client.endingBlowHud.enableResultNotification", true, "Display success / failure notification when Ending Blow is used").getBoolean(true);
 		endingBlowHudText = config.get("endingBlowHud", "dss.config.client.endingBlowHud.enableText", false, "Display text instead of icons for Ending Blow notifications").getBoolean(false);
@@ -205,7 +210,6 @@ public class Config
 	}
 
 	public static void refreshServer() {
-		/*================== WEAPON REGISTRY =====================*/
 		swords = config.get("Weapon Registry", "[Allowed Swords] Enter items as modid:registered_item_name, each on a separate line between the '<' and '>'", new String[0], "Register an item so that it is considered a SWORD by ZSS, i.e. it be used with skills that\nrequire swords, as well as other interactions that require swords, such as cutting grass.\nAll swords are also considered WEAPONS.").getStringList();
 		Arrays.sort(swords);
 		weapons = config.get("Weapon Registry", "[Allowed Weapons] Enter items as modid:registered_item_name, each on a separate line between the '<' and '>'", new String[0], "Register an item as a generic melee WEAPON. This means it can be used for all\nskills except those that specifically require a sword, as well as some other things.").getStringList();
@@ -215,8 +219,6 @@ public class Config
 		Arrays.sort(forbidden_swords);
 		forbidden_weapons = config.get("Weapon Registry", "[Forbidden Weapons] Enter items as modid:registered_item_name, each on a separate line between the '<' and '>'", new String[0], "Forbid one or more items from acting as WEAPONs, e.g. if an item is added by IMC and you don't want it to be usable with skills.\nNote that this will also prevent the item from behaving as a SWORD.").getStringList();
 		Arrays.sort(forbidden_weapons);
-		/*================== SERVER =====================*/
-		/* General server settings */
 		backSliceDisarmorPlayer = config.get("general", "dss.config.server.general.backSliceDisarmorPlayer", true, "Allow Back Slice to potentially knock off player armor").getBoolean(true);
 		String[] banned = config.get("general", "dss.config.server.general.bannedSkills", new String[0], "Enter the registry names for each skill disallowed on this server, each on a separate line between the '<' and '>'. Disabling a skill prevents players from using that skill, but does not change the player's known skills. Skill items previously generated as loot may be found but not used, and subsequent loot will not generate with that skill. Skill orb-like items may still drop from mobs / players unless disabled separately, but may not be used to learn the skill. This setting is save-game safe: skills may be disabled and re-enabled without affecting the saved game state.").setRequiresMcRestart(true).getStringList();
 		bannedSkills.clear();
@@ -229,46 +231,6 @@ public class Config
 		skillSwordCreative = config.get("general", "dss.config.server.general.skillSwordCreative", true, "Enable Skill Swords in the Creative Tab (iron only, as examples)").setRequiresMcRestart(true).getBoolean(true);
 		skillSwordCreativeLevel = config.get("general", "dss.config.server.general.skillSwordCreativeLevel", 3, "Skill level provided by the Creative Tab Skill Swords [1-5]", 1, 5).setRequiresMcRestart(true).getInt();
 		skillSwordRandom = config.get("general", "dss.config.server.general.skillSwordRandom", true, "Enable randomized Skill Swords to add to loot or drop lists").setRequiresMcRestart(true).getBoolean(true);
-		/* Skills modifiers */
-		armorBreakDamageMultiplier = (float) config.get("skills", "dss.config.server.skills.armorBreakDamageMultiplier", 1.0D,
-				"Damage multiplier for Armor Break skill (1.0 = normal damage)", 0.0D, 10.0D).getDouble();
-		swordBeamHealthAllowancePerLevel = (float) config.get("skills", "dss.config.server.skills.swordBeamHealthAllowancePerLevel", 0.6D,
-				"Health allowance per level for Sword Beam, in half-hearts (0.0 = require full health; higher values allow more missing health per level)", 0.0D, 10.0D).getDouble();
-		swordBeamBaseDamageFactor = config.get("skills", "dss.config.server.skills.swordBeamBaseDamageFactor", 30,
-				"Base damage factor (percentage of sword damage) for Sword Beam", 0, 1000).getInt();
-		swordBeamDamageFactorPerLevel = config.get("skills", "dss.config.server.skills.swordBeamDamageFactorPerLevel", 10,
-				"Damage factor increase per level for Sword Beam", 0, 1000).getInt();
-		swordBeamRangePerLevel = config.get("skills", "dss.config.server.skills.swordBeamRangePerLevel", 1,
-				"Additional lifespan ticks per level for Sword Beam (1 = vanilla behavior; higher values increase range)", 0, 100).getInt();
-		swordBasicRangeBase = config.get("skills", "dss.config.server.skills.swordBasicRangeBase", 6,
-				"Base targeting range for Basic Sword (6 = vanilla behavior)", 0, 100).getInt();
-		swordBasicRangePerLevel = config.get("skills", "dss.config.server.skills.swordBasicRangePerLevel", 1,
-				"Additional targeting range per level for Basic Sword (1 = vanilla behavior)", 0, 100).getInt();
-		swordBasicComboSizeBase = config.get("skills", "dss.config.server.skills.swordBasicComboSizeBase", 2,
-				"Base max combo size for Basic Sword (2 = vanilla behavior)", 1, 100).getInt();
-		swordBasicComboSizePerLevel = config.get("skills", "dss.config.server.skills.swordBasicComboSizePerLevel", 1,
-				"Additional max combo size per level for Basic Sword (1 = vanilla behavior)", 0, 100).getInt();
-		swordBasicComboDamageBonus = (float) config.get("skills", "dss.config.server.skills.swordBasicComboDamageBonus", 1.0D,
-				"Flat damage bonus per combo hit for Basic Sword (1.0 = +1 damage per combo hit, vanilla behavior)", 0.0D, 100.0D).getDouble();
-		backSliceDamageBonusPerLevel = (float) config.get("skills", "dss.config.server.skills.backSliceDamageBonusPerLevel", 0.1D,
-				"Damage bonus per level for Back Slice (0.1 = +10% per level)", 0.0D, 10.0D).getDouble();
-		leapingBlowDamageBonusPerLevel = (float) config.get("skills", "dss.config.server.skills.leapingBlowDamageBonusPerLevel", 1.0D,
-				"Flat damage bonus per level for Leaping Blow (1.0 = +1 damage per level)", 0.0D, 100.0D).getDouble();
-		leapingBlowLifespanPerLevel = config.get("skills", "dss.config.server.skills.leapingBlowLifespanPerLevel", 1,
-				"Additional lifespan ticks per level for Leaping Blow (1 = vanilla behavior; controls how far the projectile travels)", 0, 100).getInt();
-		leapingBlowRangeBase = config.get("skills", "dss.config.server.skills.leapingBlowRangeBase", 3.0D,
-				"Base range for Leaping Blow damage falloff (3.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
-		leapingBlowRangePerLevel = config.get("skills", "dss.config.server.skills.leapingBlowRangePerLevel", 1.0D,
-				"Additional range per level for Leaping Blow damage falloff (1.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
-		endingBlowDamageBonusPerLevel = (float) config.get("skills", "dss.config.server.skills.endingBlowDamageBonusPerLevel", 0.2D,
-				"Damage bonus per level for Ending Blow (0.2 = +20% per level)", 0.0D, 10.0D).getDouble();
-		endingBlowDurationBase = config.get("skills", "dss.config.server.skills.endingBlowDurationBase", 45,
-				"Base duration (in ticks) of the defense-down effect for Ending Blow", 0, 1000).getInt();
-		endingBlowDurationPerLevel = config.get("skills", "dss.config.server.skills.endingBlowDurationPerLevel", 5,
-				"Duration reduction per level for Ending Blow (subtracted from base duration)", 0, 100).getInt();
-		mortalDrawDamageBonusPerLevel = config.get("skills", "dss.config.server.skills.mortalDrawDamageBonusPerLevel", 10,
-				"Damage bonus per level for Mortal Draw, in percent (10 = +10% per level)", 0, 1000).getInt();
-		/* Loot / drops settings */
 		bonusOrbEnable = config.get("drops", "dss.config.server.drops.bonusOrbEnable", false, "Whether all players should start with a Basic Skill orb").getBoolean(false);
 		orbLootWeight = config.get("drops", "dss.config.server.drops.orbLootWeight", 1, "Weight for skill orbs when added to vanilla chest loot (0 to disable) [0-100]", 0, 100).setRequiresMcRestart(true).getInt();
 		orbDropEnable = config.get("drops", "dss.config.server.drops.orbDropEnable", true, "Enable skill orbs to drop as loot from mobs (may still be disabled individually)").getBoolean(true);
@@ -288,6 +250,81 @@ public class Config
 		}
 	}
 
+	public static void refreshSkills() {
+		/* Armor Break */
+		armorBreakDamageBonusPerLevel = (float) skillsConfig.get("armorBreak", "damageBonusPerLevel", 0.1D,
+				"Damage bonus per level for Armor Break (0.1 = +10% per level; 0.0 = no scaling)", 0.0D, 10.0D).getDouble();
+		armorBreakExhaustionBase = (float) skillsConfig.get("armorBreak", "exhaustionBase", 2.0D,
+				"Base exhaustion for Armor Break", 0.0D, 100.0D).getDouble();
+		armorBreakExhaustionPerLevel = (float) skillsConfig.get("armorBreak", "exhaustionPerLevel", 0.1D,
+				"Exhaustion reduction per level for Armor Break (subtracted from base)", 0.0D, 100.0D).getDouble();
+		/* Sword Beam */
+		swordBeamHealthAllowancePerLevel = (float) skillsConfig.get("swordBeam", "healthAllowancePerLevel", 0.6D,
+				"Health allowance per level for Sword Beam, in half-hearts (0.0 = require full health; higher values allow more missing health per level)", 0.0D, 10.0D).getDouble();
+		swordBeamBaseDamageFactor = skillsConfig.get("swordBeam", "baseDamageFactor", 30,
+				"Base damage factor (percentage of sword damage) for Sword Beam", 0, 1000).getInt();
+		swordBeamDamageFactorPerLevel = skillsConfig.get("swordBeam", "damageFactorPerLevel", 10,
+				"Damage factor increase per level for Sword Beam", 0, 1000).getInt();
+		swordBeamRangePerLevel = skillsConfig.get("swordBeam", "rangePerLevel", 1,
+				"Additional lifespan ticks per level for Sword Beam (1 = vanilla behavior; higher values increase range)", 0, 100).getInt();
+		swordBeamExhaustionBase = (float) skillsConfig.get("swordBeam", "exhaustionBase", 2.0D,
+				"Base exhaustion for Sword Beam", 0.0D, 100.0D).getDouble();
+		swordBeamExhaustionPerLevel = (float) skillsConfig.get("swordBeam", "exhaustionPerLevel", 0.1D,
+				"Exhaustion reduction per level for Sword Beam (subtracted from base)", 0.0D, 100.0D).getDouble();
+		/* Sword Basic */
+		swordBasicRangeBase = skillsConfig.get("swordBasic", "rangeBase", 6,
+				"Base targeting range for Basic Sword (6 = vanilla behavior)", 0, 100).getInt();
+		swordBasicRangePerLevel = skillsConfig.get("swordBasic", "rangePerLevel", 1,
+				"Additional targeting range per level for Basic Sword (1 = vanilla behavior)", 0, 100).getInt();
+		swordBasicComboSizeBase = skillsConfig.get("swordBasic", "comboSizeBase", 2,
+				"Base max combo size for Basic Sword (2 = vanilla behavior)", 1, 100).getInt();
+		swordBasicComboSizePerLevel = skillsConfig.get("swordBasic", "comboSizePerLevel", 1,
+				"Additional max combo size per level for Basic Sword (1 = vanilla behavior)", 0, 100).getInt();
+		swordBasicComboDamageBonus = (float) skillsConfig.get("swordBasic", "comboDamageBonus", 1.0D,
+				"Flat damage bonus per combo hit for Basic Sword (1.0 = +1 damage per combo hit, vanilla behavior)", 0.0D, 100.0D).getDouble();
+		/* Back Slice */
+		backSliceDamageBonusPerLevel = (float) skillsConfig.get("backSlice", "damageBonusPerLevel", 0.1D,
+				"Damage bonus per level for Back Slice (0.1 = +10% per level)", 0.0D, 10.0D).getDouble();
+		backSliceExhaustionBase = (float) skillsConfig.get("backSlice", "exhaustionBase", 1.0D,
+				"Base exhaustion for Back Slice", 0.0D, 100.0D).getDouble();
+		backSliceExhaustionPerLevel = (float) skillsConfig.get("backSlice", "exhaustionPerLevel", 0.1D,
+				"Exhaustion reduction per level for Back Slice (subtracted from base)", 0.0D, 100.0D).getDouble();
+		/* Leaping Blow */
+		leapingBlowDamageBonusPerLevel = (float) skillsConfig.get("leapingBlow", "damageBonusPerLevel", 1.0D,
+				"Flat damage bonus per level for Leaping Blow (1.0 = +1 damage per level)", 0.0D, 100.0D).getDouble();
+		leapingBlowLifespanPerLevel = skillsConfig.get("leapingBlow", "lifespanPerLevel", 1,
+				"Additional lifespan ticks per level for Leaping Blow (1 = vanilla behavior; controls how far the projectile travels)", 0, 100).getInt();
+		leapingBlowRangeBase = skillsConfig.get("leapingBlow", "rangeBase", 3.0D,
+				"Base range for Leaping Blow damage falloff (3.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		leapingBlowRangePerLevel = skillsConfig.get("leapingBlow", "rangePerLevel", 1.0D,
+				"Additional range per level for Leaping Blow damage falloff (1.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		leapingBlowExhaustionBase = (float) skillsConfig.get("leapingBlow", "exhaustionBase", 2.0D,
+				"Base exhaustion for Leaping Blow", 0.0D, 100.0D).getDouble();
+		leapingBlowExhaustionPerLevel = (float) skillsConfig.get("leapingBlow", "exhaustionPerLevel", 0.1D,
+				"Exhaustion reduction per level for Leaping Blow (subtracted from base)", 0.0D, 100.0D).getDouble();
+		/* Ending Blow */
+		endingBlowDamageBonusPerLevel = (float) skillsConfig.get("endingBlow", "damageBonusPerLevel", 0.2D,
+				"Damage bonus per level for Ending Blow (0.2 = +20% per level)", 0.0D, 10.0D).getDouble();
+		endingBlowDurationBase = skillsConfig.get("endingBlow", "durationBase", 45,
+				"Base duration (in ticks) of the defense-down effect for Ending Blow", 0, 1000).getInt();
+		endingBlowDurationPerLevel = skillsConfig.get("endingBlow", "durationPerLevel", 5,
+				"Duration reduction per level for Ending Blow (subtracted from base duration)", 0, 100).getInt();
+		endingBlowExhaustionBase = (float) skillsConfig.get("endingBlow", "exhaustionBase", 2.0D,
+				"Base exhaustion for Ending Blow", 0.0D, 100.0D).getDouble();
+		endingBlowExhaustionPerLevel = (float) skillsConfig.get("endingBlow", "exhaustionPerLevel", 0.1D,
+				"Exhaustion reduction per level for Ending Blow (subtracted from base)", 0.0D, 100.0D).getDouble();
+		/* Mortal Draw */
+		mortalDrawDamageBonusPerLevel = skillsConfig.get("mortalDraw", "damageBonusPerLevel", 10,
+				"Damage bonus per level for Mortal Draw, in percent (10 = +10% per level)", 0, 1000).getInt();
+		mortalDrawExhaustionBase = (float) skillsConfig.get("mortalDraw", "exhaustionBase", 3.0D,
+				"Base exhaustion for Mortal Draw", 0.0D, 100.0D).getDouble();
+		mortalDrawExhaustionPerLevel = (float) skillsConfig.get("mortalDraw", "exhaustionPerLevel", 0.2D,
+				"Exhaustion reduction per level for Mortal Draw (subtracted from base)", 0.0D, 100.0D).getDouble();
+		if (skillsConfig.hasChanged()) {
+			skillsConfig.save();
+		}
+	}
+
 	private static void refreshSkillGroups() {
 		String[] groups = SkillGroup.getAll().stream()
 				.map(g -> g.label)
@@ -301,7 +338,6 @@ public class Config
 				continue;
 			}
 			group.priority = i--;
-			// Skill List for this group
 			String[] groupSkills = SkillRegistry.getValues().stream()
 					.filter(s -> s.displayInGroup(group))
 					.map(s -> s.getRegistryName().toString())
@@ -323,6 +359,9 @@ public class Config
 		if (config.hasChanged()) {
 			config.save();
 		}
+		if (skillsConfig.hasChanged()) {
+			skillsConfig.save();
+		}
 	}
 	/*================== CLIENT SIDE SETTINGS =====================*/
 	public static int getHitsToDisplay() { return comboHudMaxHits; }
@@ -333,7 +372,6 @@ public class Config
 	public static boolean autoTargetEnabled() { return enableAutoTarget; }
 	public static boolean canTargetPassiveMobs() { return enableTargetPassive; }
 	public static boolean canTargetPlayers() { return enableTargetPlayer; }
-	/* Skill GUI */
 	public static boolean clickedGroupFilterSound() { return clickedGroupFilterSound; }
 	public static boolean clickedPageSound() { return clickedPageSound; }
 	public static boolean clickedSkillSound() { return clickedSkillSound; }
@@ -349,7 +387,6 @@ public class Config
 		String alt = skill.getRegistryName().getNamespace() + ":*";
 		return set != null && (set.contains(name) || set.contains(alt));
 	}
-	/*================== SKILLS =====================*/
 	public static boolean giveBonusOrb() { return bonusOrbEnable; }
 	public static int getOrbLootWeight() { return orbLootWeight; }
 	public static int getBaseSwingSpeed() { return baseSwingSpeed; }
@@ -361,38 +398,46 @@ public class Config
 	public static boolean canHighJump() { return risingCutHighJump; }
 	public static int getSkillSwordLevel() { return skillSwordCreativeLevel; }
 	public static int getSkillSwordLootWeight() { return skillSwordLootWeight; }
-	public static float getArmorBreakDamageMultiplier() { return armorBreakDamageMultiplier; }
+	public static float getArmorBreakDamageBonusPerLevel() { return armorBreakDamageBonusPerLevel; }
+	public static float getArmorBreakExhaustionBase() { return armorBreakExhaustionBase; }
+	public static float getArmorBreakExhaustionPerLevel() { return armorBreakExhaustionPerLevel; }
 	public static float getSwordBeamHealthAllowancePerLevel() { return swordBeamHealthAllowancePerLevel; }
 	public static int getSwordBeamBaseDamageFactor() { return swordBeamBaseDamageFactor; }
 	public static int getSwordBeamDamageFactorPerLevel() { return swordBeamDamageFactorPerLevel; }
 	public static int getSwordBeamRangePerLevel() { return swordBeamRangePerLevel; }
+	public static float getSwordBeamExhaustionBase() { return swordBeamExhaustionBase; }
+	public static float getSwordBeamExhaustionPerLevel() { return swordBeamExhaustionPerLevel; }
 	public static int getSwordBasicRangeBase() { return swordBasicRangeBase; }
 	public static int getSwordBasicRangePerLevel() { return swordBasicRangePerLevel; }
 	public static int getSwordBasicComboSizeBase() { return swordBasicComboSizeBase; }
 	public static int getSwordBasicComboSizePerLevel() { return swordBasicComboSizePerLevel; }
 	public static float getSwordBasicComboDamageBonus() { return swordBasicComboDamageBonus; }
 	public static float getBackSliceDamageBonusPerLevel() { return backSliceDamageBonusPerLevel; }
+	public static float getBackSliceExhaustionBase() { return backSliceExhaustionBase; }
+	public static float getBackSliceExhaustionPerLevel() { return backSliceExhaustionPerLevel; }
 	public static float getLeapingBlowDamageBonusPerLevel() { return leapingBlowDamageBonusPerLevel; }
 	public static int getLeapingBlowLifespanPerLevel() { return leapingBlowLifespanPerLevel; }
 	public static double getLeapingBlowRangeBase() { return leapingBlowRangeBase; }
 	public static double getLeapingBlowRangePerLevel() { return leapingBlowRangePerLevel; }
+	public static float getLeapingBlowExhaustionBase() { return leapingBlowExhaustionBase; }
+	public static float getLeapingBlowExhaustionPerLevel() { return leapingBlowExhaustionPerLevel; }
 	public static float getEndingBlowDamageBonusPerLevel() { return endingBlowDamageBonusPerLevel; }
 	public static int getEndingBlowDurationBase() { return endingBlowDurationBase; }
 	public static int getEndingBlowDurationPerLevel() { return endingBlowDurationPerLevel; }
+	public static float getEndingBlowExhaustionBase() { return endingBlowExhaustionBase; }
+	public static float getEndingBlowExhaustionPerLevel() { return endingBlowExhaustionPerLevel; }
 	public static int getMortalDrawDamageBonusPerLevel() { return mortalDrawDamageBonusPerLevel; }
-	/** Returns amount of health that may be missing and still be able to activate certain skills (e.g. Super Spin Attack) */
+	public static float getMortalDrawExhaustionBase() { return mortalDrawExhaustionBase; }
+	public static float getMortalDrawExhaustionPerLevel() { return mortalDrawExhaustionPerLevel; }
 	public static float getHealthAllowance(int level) {
 		return (requireFullHealth ? 0.0F : (0.6F * level));
 	}
-	/** @return true if the skill has been disabled either by the server or client settings, or if it is null */
 	public static final boolean isSkillDisabled(EntityPlayer player, @Nullable SkillBase skill) {
 		return !Config.isSkillAllowed(skill) || DSSPlayerInfo.get(player).isSkillDisabled(skill);
 	}
-	/** @return true if the skill is allowed by the server, i.e. not banned */
 	public static final boolean isSkillAllowed(@Nullable SkillBase skill) {
 		return skill != null && skill.getRegistryName() != null && !bannedSkills.contains(skill.getRegistryName().toString());
 	}
-	/*================== DROPS =====================*/
 	public static boolean arePlayerDropsEnabled() { return playerDropEnable; }
 	public static float getPlayerDropFactor() { return playerDropFactor; }
 	public static boolean areOrbDropsEnabled() { return orbDropEnable; }
@@ -402,9 +447,6 @@ public class Config
 		return (orbDropChance.containsKey(orbID) ? orbDropChance.get(orbID) : 0.0F);
 	}
 
-	/**
-	 * Updates client settings from server packet
-	 */
 	public static void syncClientSettings(SyncConfigPacket msg) {
 		if (!msg.isMessageValid()) {
 			DynamicSwordSkills.logger.error("Invalid SyncConfigPacket attempting to process!");

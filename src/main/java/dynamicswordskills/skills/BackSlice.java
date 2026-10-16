@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made Back Slice damage bonus per level configurable.
+ * - Made damage bonus per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -174,7 +174,7 @@ public class BackSlice extends SkillActive
 
 	@Override
 	protected float getExhaustion() {
-		return (1.0F - (0.1F * level));
+		return Config.getBackSliceExhaustionBase() - (level * Config.getBackSliceExhaustionPerLevel());
 	}
 
 	@Override

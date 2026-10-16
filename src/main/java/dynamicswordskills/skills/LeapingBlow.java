@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made Leaping Blow damage bonus per level configurable.
+ * - Made damage bonus per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -88,7 +88,7 @@ public class LeapingBlow extends SkillActive
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
 		desc.add(getDamageDisplay(Math.round(getDamageBonus()), true));
-		desc.add(getRangeDisplay(3.0F + 0.5F * level));
+		desc.add(getRangeDisplay((float)(Config.getLeapingBlowRangeBase() + Config.getLeapingBlowRangePerLevel() * level)));
 		desc.add(getAreaDisplay(0.5F + 0.25F * level));
 		desc.add(getDurationDisplay(getPotionDuration(player), false));
 		desc.add(getExhaustionDisplay(getExhaustion()));
@@ -106,7 +106,7 @@ public class LeapingBlow extends SkillActive
 
 	@Override
 	protected float getExhaustion() {
-		return 2.0F - (0.1F * level);
+		return Config.getLeapingBlowExhaustionBase() - (level * Config.getLeapingBlowExhaustionPerLevel());
 	}
 
 	/**

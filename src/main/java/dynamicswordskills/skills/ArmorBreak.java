@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Added configurable damage multiplier for Armor Break skill.
+ * - Added configurable damage bonus per level and exhaustion for Armor Break.
  */
 
 package dynamicswordskills.skills;
@@ -111,7 +111,7 @@ public class ArmorBreak extends SkillActive
 
 	@Override
 	protected float getExhaustion() {
-		return 2.0F - (0.1F * level);
+		return Config.getArmorBreakExhaustionBase() - (level * Config.getArmorBreakExhaustionPerLevel());
 	}
 
 	/** Returns number of ticks required before attack will execute: 20 - level */
@@ -210,8 +210,8 @@ public class ArmorBreak extends SkillActive
 	@Override
 	public boolean onAttack(EntityPlayer player, EntityLivingBase entity, DamageSource source, float amount) {
 		activeTimer = 0;
-		float multiplier = Config.getArmorBreakDamageMultiplier();
-		entity.attackEntityFrom(DamageUtils.causeArmorBreakDamage(player), amount * multiplier);
+		amount *= 1.0F + (level * Config.getArmorBreakDamageBonusPerLevel());
+		entity.attackEntityFrom(DamageUtils.causeArmorBreakDamage(player), amount);
 		if (!player.getEntityWorld().isRemote) {
 			PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.ARMOR_BREAK, SoundCategory.PLAYERS, 0.4F, 0.5F);
 		}

@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made Mortal Draw damage bonus per level configurable.
+ * - Made damage bonus per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -123,7 +123,7 @@ public class MortalDraw extends SkillActive
 
 	@Override
 	protected float getExhaustion() {
-		return 3.0F - (0.2F * level);
+		return Config.getMortalDrawExhaustionBase() - (level * Config.getMortalDrawExhaustionPerLevel());
 	}
 
 	/**
