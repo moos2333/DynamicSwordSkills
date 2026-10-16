@@ -48,3 +48,13 @@ Some creatures are mapped to a particular skill orb, in which case they will alw
 When a mob tries to drop a skill orb, the base drop chance ranges from 0% to 10% (default for all is 5%); using weapons with the Looting enchantment significantly improves the drop rate.
 
 Once a skill is learned, check the in-game Skill GUI (default key to open is 'p') and click on a skill orb to view information about its effect and how to activate it.
+
+## Credits & License
+
+This is a modified fork of [Dynamic Sword Skills](https://github.com/coolAlias/DynamicSwordSkills)
+by coolAlias, originally licensed under GPLv3.
+
+This fork is also licensed under GPLv3. See the [LICENSE](LICENSE) file for details.
+
+Original author: coolAlias
+Original project: https://www.curseforge.com/minecraft/mc-mods/dynamic-sword-skills

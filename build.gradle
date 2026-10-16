@@ -1,58 +1,91 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-    }
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'maven-publish'
+    id 'eclipse'
+    id 'com.gtnewhorizons.retrofuturagradle' version '2.0.2'
 }
-apply plugin: 'net.minecraftforge.gradle.forge'
 
 version = "6.2.1"
 group = "com.google.coolalias008.dynamicswordskills"
-archivesBaseName = "DynamicSwordSkills-1.12.2"
 
-sourceCompatibility = targetCompatibility = "1.8"
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
+base {
+    archivesName = "DynamicSwordSkills-1.12.2"
 }
 
-dependencies {
-    compile files (
-		"eclipse/libs/SwordSkillsApi-1.12.2-1.5.1-deobf.jar",
-    )
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
 minecraft {
-    version = "1.12.2-14.23.5.2768"
-    runDir = "eclipse"
-    mappings = "stable_39"
+    mcVersion = '1.12.2'
+    mcpMappingChannel = 'stable'
+    mcpMappingVersion = '39'
+    username = 'Developer'
+
+    injectedTags.put('MOD_ID', 'dynamicswordskills')
 }
 
-processResources
-{
-    // this will ensure that this task is redone when the versions change.
+tasks.injectTags.configure {
+    outputClassName.set("${project.group}.Tags")
+}
+
+repositories {
+    maven {
+        name 'CleanroomMC Maven'
+        url 'https://maven.cleanroommc.com'
+    }
+    maven {
+        name 'CurseMaven'
+        url 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
+    maven {
+        name 'GTNH Maven'
+        url 'https://nexus.gtnewhorizons.com/repository/public/'
+        allowInsecureProtocol = true
+        content {
+            includeGroup 'com.gtnewhorizons'
+            includeGroup 'com.gtnewhorizons.retrofuturagradle'
+        }
+    }
+}
+
+dependencies {
+    compileOnly rfg.deobf(files('libs/SwordSkillsApi-1.12.2-1.5.1-deobf.jar'))
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    
     inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-    // replace stuff in mcmod.info, nothing else
+    inputs.property "mcversion", project.minecraft.mcVersion
+
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+        expand 'version': project.version, 'mcversion': project.minecraft.mcVersion
     }
-    // copy everything other than mcmod.info
+
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
     }
 }
 
-task deobfJar(type: Jar) {
+tasks.register('deobfJar', Jar) {
     from sourceSets.main.output
-    classifier = 'deobf'
+    archiveClassifier = 'deobf'
 }
 
 artifacts {
-	archives deobfJar
-	archives sourceJar
+    archives tasks.deobfJar
+    archives tasks.sourcesJar
 }
