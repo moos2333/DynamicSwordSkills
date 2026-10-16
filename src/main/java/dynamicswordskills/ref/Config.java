@@ -1,18 +1,30 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Added configurable Armor Break damage multiplier.
+ * - Added configurable Sword Beam health allowance, base damage factor, per-level damage factor and range.
+ * - Added configurable Back Slice damage bonus per level.
+ * - Added configurable Leaping Blow damage bonus per level.
+ * - Added configurable Leaping Blow lifespan and range per level.
+ * - Added configurable Ending Blow damage bonus per level and duration formula.
+ * - Added configurable Mortal Draw damage bonus per level.
+ * - Added configurable Basic Sword range, combo size and combo damage bonus.
  */
 
 package dynamicswordskills.ref;
@@ -107,6 +119,26 @@ public class Config
 	private static boolean skillSwordCreative;
 	private static int skillSwordCreativeLevel;
 	private static boolean skillSwordRandom;
+	/* Skills modifiers */
+	private static float armorBreakDamageMultiplier;
+	private static float swordBeamHealthAllowancePerLevel;
+	private static int swordBeamBaseDamageFactor;
+	private static int swordBeamDamageFactorPerLevel;
+	private static int swordBeamRangePerLevel;
+	private static int swordBasicRangeBase;
+	private static int swordBasicRangePerLevel;
+	private static int swordBasicComboSizeBase;
+	private static int swordBasicComboSizePerLevel;
+	private static float swordBasicComboDamageBonus;
+	private static float backSliceDamageBonusPerLevel;
+	private static float leapingBlowDamageBonusPerLevel;
+	private static int leapingBlowLifespanPerLevel;
+	private static double leapingBlowRangeBase;
+	private static double leapingBlowRangePerLevel;
+	private static float endingBlowDamageBonusPerLevel;
+	private static int endingBlowDurationBase;
+	private static int endingBlowDurationPerLevel;
+	private static int mortalDrawDamageBonusPerLevel;
 	/* Loot / drops settings */
 	private static boolean bonusOrbEnable;
 	private static int orbLootWeight;
@@ -197,6 +229,45 @@ public class Config
 		skillSwordCreative = config.get("general", "dss.config.server.general.skillSwordCreative", true, "Enable Skill Swords in the Creative Tab (iron only, as examples)").setRequiresMcRestart(true).getBoolean(true);
 		skillSwordCreativeLevel = config.get("general", "dss.config.server.general.skillSwordCreativeLevel", 3, "Skill level provided by the Creative Tab Skill Swords [1-5]", 1, 5).setRequiresMcRestart(true).getInt();
 		skillSwordRandom = config.get("general", "dss.config.server.general.skillSwordRandom", true, "Enable randomized Skill Swords to add to loot or drop lists").setRequiresMcRestart(true).getBoolean(true);
+		/* Skills modifiers */
+		armorBreakDamageMultiplier = (float) config.get("skills", "dss.config.server.skills.armorBreakDamageMultiplier", 1.0D,
+				"Damage multiplier for Armor Break skill (1.0 = normal damage)", 0.0D, 10.0D).getDouble();
+		swordBeamHealthAllowancePerLevel = (float) config.get("skills", "dss.config.server.skills.swordBeamHealthAllowancePerLevel", 0.6D,
+				"Health allowance per level for Sword Beam, in half-hearts (0.0 = require full health; higher values allow more missing health per level)", 0.0D, 10.0D).getDouble();
+		swordBeamBaseDamageFactor = config.get("skills", "dss.config.server.skills.swordBeamBaseDamageFactor", 30,
+				"Base damage factor (percentage of sword damage) for Sword Beam", 0, 1000).getInt();
+		swordBeamDamageFactorPerLevel = config.get("skills", "dss.config.server.skills.swordBeamDamageFactorPerLevel", 10,
+				"Damage factor increase per level for Sword Beam", 0, 1000).getInt();
+		swordBeamRangePerLevel = config.get("skills", "dss.config.server.skills.swordBeamRangePerLevel", 1,
+				"Additional lifespan ticks per level for Sword Beam (1 = vanilla behavior; higher values increase range)", 0, 100).getInt();
+		swordBasicRangeBase = config.get("skills", "dss.config.server.skills.swordBasicRangeBase", 6,
+				"Base targeting range for Basic Sword (6 = vanilla behavior)", 0, 100).getInt();
+		swordBasicRangePerLevel = config.get("skills", "dss.config.server.skills.swordBasicRangePerLevel", 1,
+				"Additional targeting range per level for Basic Sword (1 = vanilla behavior)", 0, 100).getInt();
+		swordBasicComboSizeBase = config.get("skills", "dss.config.server.skills.swordBasicComboSizeBase", 2,
+				"Base max combo size for Basic Sword (2 = vanilla behavior)", 1, 100).getInt();
+		swordBasicComboSizePerLevel = config.get("skills", "dss.config.server.skills.swordBasicComboSizePerLevel", 1,
+				"Additional max combo size per level for Basic Sword (1 = vanilla behavior)", 0, 100).getInt();
+		swordBasicComboDamageBonus = (float) config.get("skills", "dss.config.server.skills.swordBasicComboDamageBonus", 1.0D,
+				"Flat damage bonus per combo hit for Basic Sword (1.0 = +1 damage per combo hit, vanilla behavior)", 0.0D, 100.0D).getDouble();
+		backSliceDamageBonusPerLevel = (float) config.get("skills", "dss.config.server.skills.backSliceDamageBonusPerLevel", 0.1D,
+				"Damage bonus per level for Back Slice (0.1 = +10% per level)", 0.0D, 10.0D).getDouble();
+		leapingBlowDamageBonusPerLevel = (float) config.get("skills", "dss.config.server.skills.leapingBlowDamageBonusPerLevel", 1.0D,
+				"Flat damage bonus per level for Leaping Blow (1.0 = +1 damage per level)", 0.0D, 100.0D).getDouble();
+		leapingBlowLifespanPerLevel = config.get("skills", "dss.config.server.skills.leapingBlowLifespanPerLevel", 1,
+				"Additional lifespan ticks per level for Leaping Blow (1 = vanilla behavior; controls how far the projectile travels)", 0, 100).getInt();
+		leapingBlowRangeBase = config.get("skills", "dss.config.server.skills.leapingBlowRangeBase", 3.0D,
+				"Base range for Leaping Blow damage falloff (3.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		leapingBlowRangePerLevel = config.get("skills", "dss.config.server.skills.leapingBlowRangePerLevel", 1.0D,
+				"Additional range per level for Leaping Blow damage falloff (1.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		endingBlowDamageBonusPerLevel = (float) config.get("skills", "dss.config.server.skills.endingBlowDamageBonusPerLevel", 0.2D,
+				"Damage bonus per level for Ending Blow (0.2 = +20% per level)", 0.0D, 10.0D).getDouble();
+		endingBlowDurationBase = config.get("skills", "dss.config.server.skills.endingBlowDurationBase", 45,
+				"Base duration (in ticks) of the defense-down effect for Ending Blow", 0, 1000).getInt();
+		endingBlowDurationPerLevel = config.get("skills", "dss.config.server.skills.endingBlowDurationPerLevel", 5,
+				"Duration reduction per level for Ending Blow (subtracted from base duration)", 0, 100).getInt();
+		mortalDrawDamageBonusPerLevel = config.get("skills", "dss.config.server.skills.mortalDrawDamageBonusPerLevel", 10,
+				"Damage bonus per level for Mortal Draw, in percent (10 = +10% per level)", 0, 1000).getInt();
 		/* Loot / drops settings */
 		bonusOrbEnable = config.get("drops", "dss.config.server.drops.bonusOrbEnable", false, "Whether all players should start with a Basic Skill orb").getBoolean(false);
 		orbLootWeight = config.get("drops", "dss.config.server.drops.orbLootWeight", 1, "Weight for skill orbs when added to vanilla chest loot (0 to disable) [0-100]", 0, 100).setRequiresMcRestart(true).getInt();
@@ -290,7 +361,26 @@ public class Config
 	public static boolean canHighJump() { return risingCutHighJump; }
 	public static int getSkillSwordLevel() { return skillSwordCreativeLevel; }
 	public static int getSkillSwordLootWeight() { return skillSwordLootWeight; }
-	/** Returns amount of health that may be missing and still be able to activate certain skills (e.g. Sword Beam) */
+	public static float getArmorBreakDamageMultiplier() { return armorBreakDamageMultiplier; }
+	public static float getSwordBeamHealthAllowancePerLevel() { return swordBeamHealthAllowancePerLevel; }
+	public static int getSwordBeamBaseDamageFactor() { return swordBeamBaseDamageFactor; }
+	public static int getSwordBeamDamageFactorPerLevel() { return swordBeamDamageFactorPerLevel; }
+	public static int getSwordBeamRangePerLevel() { return swordBeamRangePerLevel; }
+	public static int getSwordBasicRangeBase() { return swordBasicRangeBase; }
+	public static int getSwordBasicRangePerLevel() { return swordBasicRangePerLevel; }
+	public static int getSwordBasicComboSizeBase() { return swordBasicComboSizeBase; }
+	public static int getSwordBasicComboSizePerLevel() { return swordBasicComboSizePerLevel; }
+	public static float getSwordBasicComboDamageBonus() { return swordBasicComboDamageBonus; }
+	public static float getBackSliceDamageBonusPerLevel() { return backSliceDamageBonusPerLevel; }
+	public static float getLeapingBlowDamageBonusPerLevel() { return leapingBlowDamageBonusPerLevel; }
+	public static int getLeapingBlowLifespanPerLevel() { return leapingBlowLifespanPerLevel; }
+	public static double getLeapingBlowRangeBase() { return leapingBlowRangeBase; }
+	public static double getLeapingBlowRangePerLevel() { return leapingBlowRangePerLevel; }
+	public static float getEndingBlowDamageBonusPerLevel() { return endingBlowDamageBonusPerLevel; }
+	public static int getEndingBlowDurationBase() { return endingBlowDurationBase; }
+	public static int getEndingBlowDurationPerLevel() { return endingBlowDurationPerLevel; }
+	public static int getMortalDrawDamageBonusPerLevel() { return mortalDrawDamageBonusPerLevel; }
+	/** Returns amount of health that may be missing and still be able to activate certain skills (e.g. Super Spin Attack) */
 	public static float getHealthAllowance(int level) {
 		return (requireFullHealth ? 0.0F : (0.6F * level));
 	}

@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made Basic Sword range, combo size and combo damage bonus configurable.
  */
 
 package dynamicswordskills.skills;
@@ -46,7 +51,7 @@ import swordskillsapi.api.damage.IComboDamage;
 import swordskillsapi.api.damage.IComboDamage.IComboDamageFull;
 
 /**
- * 
+ *
  * BASIC SWORD SKILL
  * Description: Basic targeting and combo skill
  * Activation: Toggled with the Z-targeting key while looking at a valid target within range
@@ -56,7 +61,7 @@ import swordskillsapi.api.damage.IComboDamage.IComboDamageFull;
  * 			 (b) combo: time allowed between strikes is 20 ticks + (2 * level)
  * Range: 6 + level, distance within which targets can be acquired, in blocks
  * Special: Missing an attack or taking too much damage breaks the current combo.
- * 
+ *
  */
 public class SwordBasic extends SkillActive implements IComboSkill, ILockOnTarget
 {
@@ -133,14 +138,14 @@ public class SwordBasic extends SkillActive implements IComboSkill, ILockOnTarge
 		return (20 + (level * 2));
 	}
 
-	/** Returns the max combo size attainable (2 plus skill level) */
+	/** Returns the max combo size attainable (base + level * per-level) */
 	private final int getMaxComboSize() {
-		return (2 + level);
+		return Config.getSwordBasicComboSizeBase() + (level * Config.getSwordBasicComboSizePerLevel());
 	}
 
 	/** Returns max distance at which targets may be acquired or remain targetable */
 	private final int getRange() {
-		return (6 + level);
+		return Config.getSwordBasicRangeBase() + (level * Config.getSwordBasicRangePerLevel());
 	}
 
 	private float getDamageTolerance() {
@@ -286,8 +291,8 @@ public class SwordBasic extends SkillActive implements IComboSkill, ILockOnTarge
 	 */
 	@SideOnly(Side.CLIENT)
 	private boolean isTargetValid(EntityPlayer player, EntityLivingBase target) {
-		return (target != null && !target.isDead && target.getHealth() > 0F 
-				&& player.getDistance(target) < (float) getRange() 
+		return (target != null && !target.isDead && target.getHealth() > 0F
+				&& player.getDistance(target) < (float) getRange()
 				&& !target.isInvisible());
 	}
 
@@ -324,7 +329,7 @@ public class SwordBasic extends SkillActive implements IComboSkill, ILockOnTarge
 	@Override
 	public float onImpact(EntityPlayer player, EntityLivingBase entity, float amount) {
 		if (combo != null && !combo.isFinished()) {
-			amount += combo.getNumHits();
+			amount += combo.getNumHits() * Config.getSwordBasicComboDamageBonus();
 		}
 		return amount;
 	}

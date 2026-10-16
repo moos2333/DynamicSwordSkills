@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made Back Slice damage bonus per level configurable.
  */
 
 package dynamicswordskills.skills;
@@ -51,7 +56,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 
+ *
  * BACK SLICE
  * Description: Circle around a foe to strike at its vulnerable backside!
  * Activation: Hold left or right arrow key and double-tap forward
@@ -175,9 +180,9 @@ public class BackSlice extends SkillActive
 	@Override
 	public boolean canUse(EntityPlayer player) {
 		ILockOnTarget lock = DSSPlayerInfo.get(player).getTargetingSkill();
-		return super.canUse(player) && !isActive() 
-				&& !player.isHandActive() 
-				&& PlayerUtils.isSwordOrProvider(player.getHeldItemMainhand(), this) 
+		return super.canUse(player) && !isActive()
+				&& !player.isHandActive()
+				&& PlayerUtils.isSwordOrProvider(player.getHeldItemMainhand(), this)
 				&& lock != null && lock.isLockedOn();
 	}
 
@@ -315,7 +320,7 @@ public class BackSlice extends SkillActive
 		impacted = true;
 		if (isActive() && dodgeTimer <= (getActiveTime() - 5)) { // can strike any time after 5 ticks have passed
 			if (!TargetUtils.isTargetInFrontOf(entity, player, getAttackAngle())) {
-				amount *= 1.0F + (level * 0.1F);
+				amount *= 1.0F + (level * Config.getBackSliceDamageBonusPerLevel());
 				PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.MORTAL_DRAW, SoundCategory.PLAYERS, 0.4F, 0.5F);
 				success = true;
 			}

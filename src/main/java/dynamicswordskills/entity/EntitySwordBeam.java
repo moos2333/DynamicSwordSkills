@@ -1,22 +1,28 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made Sword Beam range per level configurable.
  */
 
 package dynamicswordskills.entity;
 
+import dynamicswordskills.ref.Config;
 import dynamicswordskills.ref.ModSounds;
 import dynamicswordskills.skills.Skills;
 import dynamicswordskills.skills.SwordBeam;
@@ -34,11 +40,11 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 
+ *
  * Sword beam shot from Link's sword when at full health. Inflicts a portion of
  * the original sword's base damage to the first entity struck, less 20% for each
  * additional target thus struck.
- * 
+ *
  * If using the Master Sword, the beam will shoot through enemies, hitting all
  * entities in its direct path.
  *
@@ -76,7 +82,7 @@ public class EntitySwordBeam extends EntityThrowable
 	 */
 	public EntitySwordBeam setLevel(int level) {
 		this.level = level;
-		this.lifespan += level;
+		this.lifespan += (level * Config.getSwordBeamRangePerLevel());
 		return this;
 	}
 

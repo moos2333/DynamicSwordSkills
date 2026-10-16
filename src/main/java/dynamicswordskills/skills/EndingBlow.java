@@ -1,18 +1,24 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made Ending Blow damage bonus per level configurable.
+ * - Made Ending Blow duration formula configurable.
  */
 
 package dynamicswordskills.skills;
@@ -43,7 +49,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 
+ *
  * ENDING BLOW
  * Description: Finish off an enemy made vulnerable by your flurry of blows
  * Activation: Forward, forward, and attack during combo
@@ -57,7 +63,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * - May only be used after two or more consecutive strikes on the same target
  * - Slaying an opponent with this move grants additional experience
  * - Failure to slay the target results in not being able to attack for the duration
- * 
+ *
  */
 public class EndingBlow extends SkillActive
 {
@@ -113,7 +119,7 @@ public class EndingBlow extends SkillActive
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
-		desc.add(getDamageDisplay(level * 20, true) + "%");
+		desc.add(getDamageDisplay((int)(level * Config.getEndingBlowDamageBonusPerLevel() * 100), true) + "%");
 		desc.add(getDurationDisplay(getDuration(), true));
 		desc.add(getExhaustionDisplay(getExhaustion()));
 	}
@@ -130,7 +136,7 @@ public class EndingBlow extends SkillActive
 
 	/** Returns the duration of the defense down effect */
 	public int getDuration() {
-		return 45 - (level * 5);
+		return Config.getEndingBlowDurationBase() - (level * Config.getEndingBlowDurationPerLevel());
 	}
 
 	/** Returns the {@link #lastActivationTime} */
@@ -280,7 +286,7 @@ public class EndingBlow extends SkillActive
 	public float onImpact(EntityPlayer player, EntityLivingBase entity, float amount) {
 		IComboSkill combo = DSSPlayerInfo.get(player).getComboSkill();
 		if (combo != null && combo.isComboInProgress() && entity == combo.getCombo().getLastEntityHit() && combo.getCombo().getConsecutiveHits() > 1) {
-			amount *= 1.0F + (level * 0.2F);
+			amount *= 1.0F + (level * Config.getEndingBlowDamageBonusPerLevel());
 			PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.MORTAL_DRAW, SoundCategory.PLAYERS, 0.4F, 0.5F);
 			entityHit = entity;
 		} else if (!player.getEntityWorld().isRemote) {

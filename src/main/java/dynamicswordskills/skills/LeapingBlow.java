@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made Leaping Blow damage bonus per level configurable.
  */
 
 package dynamicswordskills.skills;
@@ -40,7 +45,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 
+ *
  * LEAPING BLOW
  * Activation: Jump while holding block, then attack (shield is not required)
  * Damage: Regular sword damage (without enchantment bonuses), +1 extra damage per skill level
@@ -48,10 +53,10 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * Range: Technique travels roughly 3 blocks + 1/2 block per level
  * Area: Approximately (0.5F + (0.25F * level)) radius in a straight line
  * Exhaustion: 2.0F minus 0.1F per level (1.5F at level 5)
- * 
+ *
  * Upon landing, all targets directly in front of the player take damage and
  * are weakened temporarily.
- * 
+ *
  */
 public class LeapingBlow extends SkillActive
 {
@@ -82,7 +87,7 @@ public class LeapingBlow extends SkillActive
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
-		desc.add(getDamageDisplay(level, true));
+		desc.add(getDamageDisplay(Math.round(getDamageBonus()), true));
 		desc.add(getRangeDisplay(3.0F + 0.5F * level));
 		desc.add(getAreaDisplay(0.5F + 0.25F * level));
 		desc.add(getDurationDisplay(getPotionDuration(player), false));
@@ -112,9 +117,14 @@ public class LeapingBlow extends SkillActive
 		return false;
 	}
 
-	/** Returns player's base damage (which includes all attribute bonuses) plus 1.0F per level */
+	/** Returns the damage bonus from skill level, based on config */
+	private float getDamageBonus() {
+		return level * Config.getLeapingBlowDamageBonusPerLevel();
+	}
+
+	/** Returns player's base damage (which includes all attribute bonuses) plus the configurable per-level bonus */
 	private float getDamage(EntityPlayer player) {
-		return (float)(level + player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue());
+		return (float)(getDamageBonus() + player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue());
 	}
 
 	/** Duration of weakness effect; used for tooltip display only */

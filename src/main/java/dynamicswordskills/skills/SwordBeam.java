@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made health allowance, base damage factor and per-level damage factor configurable.
  */
 
 package dynamicswordskills.skills;
@@ -37,7 +42,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 
+ *
  * SWORD BEAM
  * Description: Shoot a beam of energy from the sword tip
  * Activation: Attack while sneaking and at near full health
@@ -79,7 +84,7 @@ public class SwordBeam extends SkillActive
 	public void addInformation(List<String> desc, EntityPlayer player) {
 		desc.add(getDamageDisplay(getDamageFactor(player), false) + "%");
 		desc.add(getRangeDisplay(12 + level));
-		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.health", String.format("%.1f", Config.getHealthAllowance(level) / 2.0F)).getUnformattedText());
+		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.health", String.format("%.1f", getHealthAllowance(level) / 2.0F)).getUnformattedText());
 		desc.add(getExhaustionDisplay(getExhaustion()));
 	}
 
@@ -98,14 +103,19 @@ public class SwordBeam extends SkillActive
 		return 2.0F - (0.1F * level);
 	}
 
+	/** Returns the health allowance for Sword Beam at the given level, ignoring the global requireFullHealth setting */
+	private float getHealthAllowance(int level) {
+		return Config.getSwordBeamHealthAllowancePerLevel() * level;
+	}
+
 	/** Returns true if players current health is within the allowed limit */
 	private boolean checkHealth(EntityPlayer player) {
-		return player.capabilities.isCreativeMode || PlayerUtils.getHealthMissing(player) <= Config.getHealthAllowance(level);
+		return player.capabilities.isCreativeMode || PlayerUtils.getHealthMissing(player) <= getHealthAllowance(level);
 	}
 
 	/** The percent of base sword damage that should be inflicted, as an integer */
 	private int getDamageFactor(EntityPlayer player) {
-		return 30 + (level * 10);
+		return Config.getSwordBeamBaseDamageFactor() + (level * Config.getSwordBeamDamageFactorPerLevel());
 	}
 
 	/** Returns player's base damage (with sword) plus 1.0F per level */

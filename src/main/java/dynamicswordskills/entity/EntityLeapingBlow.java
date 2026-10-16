@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made Leaping Blow lifespan and range per level configurable.
  */
 
 package dynamicswordskills.entity;
@@ -22,6 +27,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import dynamicswordskills.ref.Config;
 import dynamicswordskills.ref.ModSounds;
 import dynamicswordskills.util.DamageUtils;
 import dynamicswordskills.util.PlayerUtils;
@@ -46,7 +52,7 @@ import net.minecraft.world.World;
 public class EntityLeapingBlow extends EntityThrowable
 {
 	/** Keeps track of entities already affected so they don't get attacked twice */
-	private List<Integer> affectedEntities = new ArrayList<Integer>(); 
+	private List<Integer> affectedEntities = new ArrayList<Integer>();
 
 	/** Base damage should be set from player's Leaping Blow skill */
 	private float damage = 2.0F;
@@ -93,7 +99,7 @@ public class EntityLeapingBlow extends EntityThrowable
 	 */
 	public EntityLeapingBlow setLevel(int level) {
 		this.level = level;
-		this.lifespan += level;
+		this.lifespan += (level * Config.getLeapingBlowLifespanPerLevel());
 		return this;
 	}
 
@@ -107,7 +113,8 @@ public class EntityLeapingBlow extends EntityThrowable
 
 	/** Max distance (squared) from thrower that damage can still be applied */
 	private double getRangeSquared() {
-		return (3.0D + level) * (3.0D + level);
+		double range = Config.getLeapingBlowRangeBase() + (level * Config.getLeapingBlowRangePerLevel());
+		return range * range;
 	}
 
 	/** Duration of weakness effect */

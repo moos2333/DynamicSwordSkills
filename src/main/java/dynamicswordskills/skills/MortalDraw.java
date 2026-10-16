@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made Mortal Draw damage bonus per level configurable.
  */
 
 package dynamicswordskills.skills;
@@ -24,6 +29,7 @@ import dynamicswordskills.entity.DSSPlayerInfo;
 import dynamicswordskills.entity.DirtyEntityAccessor;
 import dynamicswordskills.network.PacketDispatcher;
 import dynamicswordskills.network.client.MortalDrawPacket;
+import dynamicswordskills.ref.Config;
 import dynamicswordskills.ref.ModSounds;
 import dynamicswordskills.util.PlayerUtils;
 import net.minecraft.client.Minecraft;
@@ -42,7 +48,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 
+ *
  * MORTAL DRAW
  * Activation: While empty-handed and locked on, hold the block key and attack
  * Effect: The art of drawing the sword, or Battoujutsu, is a risky but deadly move, capable
@@ -93,7 +99,7 @@ public class MortalDraw extends SkillActive
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
-		desc.add(getDamageDisplay(100, true) + "%");
+		desc.add(getDamageDisplay(getDamageMultiplier(), true) + "%");
 		desc.add(getTimeLimitDisplay(getAttackTime() - DELAY));
 		desc.add(getExhaustionDisplay(getExhaustion()));
 	}
@@ -130,7 +136,7 @@ public class MortalDraw extends SkillActive
 
 	/** Returns the amount by which damage will be increased, as a percent: [damage + (damage * x)] */
 	private int getDamageMultiplier() {
-		return 100 + (10 * level);
+		return 100 + (level * Config.getMortalDrawDamageBonusPerLevel());
 	}
 
 	@Override
@@ -154,7 +160,7 @@ public class MortalDraw extends SkillActive
 			if (!stack.isEmpty()
 					&& ((plvl > 0 && PlayerUtils.isSword(stack)) || PlayerUtils.isProvider(stack, Skills.mortalDraw))
 					&& (!needsDummy || PlayerUtils.isProvider(stack, Skills.swordBasic))
-					)
+			)
 			{
 				return i;
 			}

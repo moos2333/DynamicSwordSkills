@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Added configurable damage multiplier for Armor Break skill.
  */
 
 package dynamicswordskills.skills;
@@ -40,20 +45,20 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * 
+ *
  * ARMOR BREAK
  * Description: Unleash a powerful blow that ignores armor
  * Activation: Hold attack for (20 - level) ticks
  * Effect: Unleashes an attack that inflicts normal weapon damage but ignores armor
  * Exhaustion: 2.0F - (0.1F * level)
- * 
+ *
  * Using this skill performs an attack that ignores armor but otherwise deals exactly the
  * same damage as a normal attack with the given item would, including all bonuses from other
  * skills and enchantments.
- * 
+ *
  * Armor Break must be charged by holding the 'attack' key; once the charge reaches full,
  * the player will perform the Armor Break attack automatically.
- * 
+ *
  */
 public class ArmorBreak extends SkillActive
 {
@@ -205,8 +210,9 @@ public class ArmorBreak extends SkillActive
 	@Override
 	public boolean onAttack(EntityPlayer player, EntityLivingBase entity, DamageSource source, float amount) {
 		activeTimer = 0;
-		entity.attackEntityFrom(DamageUtils.causeArmorBreakDamage(player), amount);
-		if (!player.getEntityWorld().isRemote) { 
+		float multiplier = Config.getArmorBreakDamageMultiplier();
+		entity.attackEntityFrom(DamageUtils.causeArmorBreakDamage(player), amount * multiplier);
+		if (!player.getEntityWorld().isRemote) {
 			PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.ARMOR_BREAK, SoundCategory.PLAYERS, 0.4F, 0.5F);
 		}
 		return true;
