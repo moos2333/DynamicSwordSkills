@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made damage bonus per level, duration formula, attack window and exhaustion configurable.
+ * - Made base damage bonus, damage bonus per level, duration formula, attack window and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -118,7 +118,7 @@ public class EndingBlow extends SkillActive
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
-		desc.add(getDamageDisplay((int)(level * Config.getEndingBlowDamageBonusPerLevel() * 100), true) + "%");
+		desc.add(getDamageDisplay((int)((Config.getEndingBlowBaseDamageBonus() + level * Config.getEndingBlowDamageBonusPerLevel()) * 100), true) + "%");
 		desc.add(getDurationDisplay(getDuration(), true));
 		desc.add(getExhaustionDisplay(getExhaustion()));
 	}
@@ -285,7 +285,7 @@ public class EndingBlow extends SkillActive
 	public float onImpact(EntityPlayer player, EntityLivingBase entity, float amount) {
 		IComboSkill combo = DSSPlayerInfo.get(player).getComboSkill();
 		if (combo != null && combo.isComboInProgress() && entity == combo.getCombo().getLastEntityHit() && combo.getCombo().getConsecutiveHits() > 1) {
-			amount *= 1.0F + (level * Config.getEndingBlowDamageBonusPerLevel());
+			amount *= 1.0F + (Config.getEndingBlowBaseDamageBonus() + level * Config.getEndingBlowDamageBonusPerLevel());
 			PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.MORTAL_DRAW, SoundCategory.PLAYERS, 0.4F, 0.5F);
 			entityHit = entity;
 		} else if (!player.getEntityWorld().isRemote) {

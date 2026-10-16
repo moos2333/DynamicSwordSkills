@@ -22,8 +22,8 @@
  * - Added configurable Sword Beam health allowance, damage factors, range and exhaustion.
  * - Added configurable Back Slice damage bonus and exhaustion.
  * - Added configurable Leaping Blow damage bonus, damage multiplier, lifespan, range and exhaustion.
- * - Added configurable Ending Blow damage bonus, duration formula, attack window and exhaustion.
- * - Added configurable Mortal Draw damage bonus and exhaustion.
+ * - Added configurable Ending Blow base damage bonus, damage bonus per level, duration formula, attack window and exhaustion.
+ * - Added configurable Mortal Draw base damage bonus, damage bonus per level and exhaustion.
  * - Added configurable Basic Sword range, combo size and combo damage bonus.
  */
 
@@ -135,12 +135,14 @@ public class Config
 	private static double leapingBlowRangePerLevel;
 	private static float leapingBlowExhaustionBase;
 	private static float leapingBlowExhaustionPerLevel;
+	private static float endingBlowBaseDamageBonus;
 	private static float endingBlowDamageBonusPerLevel;
 	private static int endingBlowDurationBase;
 	private static int endingBlowDurationPerLevel;
 	private static int endingBlowAttackWindow;
 	private static float endingBlowExhaustionBase;
 	private static float endingBlowExhaustionPerLevel;
+	private static int mortalDrawBaseDamageBonus;
 	private static int mortalDrawDamageBonusPerLevel;
 	private static float mortalDrawExhaustionBase;
 	private static float mortalDrawExhaustionPerLevel;
@@ -307,6 +309,8 @@ public class Config
 		leapingBlowExhaustionPerLevel = (float) skillsConfig.get("leapingBlow", "exhaustionPerLevel", 0.1D,
 				"Exhaustion reduction per level for Leaping Blow (subtracted from base)", 0.0D, 100.0D).getDouble();
 		/* Ending Blow */
+		endingBlowBaseDamageBonus = (float) skillsConfig.get("endingBlow", "baseDamageBonus", 0.0D,
+				"Base damage bonus for Ending Blow (0.0 = vanilla behavior; 0.1 = +10% base)", 0.0D, 10.0D).getDouble();
 		endingBlowDamageBonusPerLevel = (float) skillsConfig.get("endingBlow", "damageBonusPerLevel", 0.2D,
 				"Damage bonus per level for Ending Blow (0.2 = +20% per level)", 0.0D, 10.0D).getDouble();
 		endingBlowDurationBase = skillsConfig.get("endingBlow", "durationBase", 45,
@@ -320,6 +324,8 @@ public class Config
 		endingBlowExhaustionPerLevel = (float) skillsConfig.get("endingBlow", "exhaustionPerLevel", 0.1D,
 				"Exhaustion reduction per level for Ending Blow (subtracted from base)", 0.0D, 100.0D).getDouble();
 		/* Mortal Draw */
+		mortalDrawBaseDamageBonus = skillsConfig.get("mortalDraw", "baseDamageBonus", 100,
+				"Base damage bonus for Mortal Draw, in percent (100 = vanilla behavior; higher = more base damage)", 0, 1000).getInt();
 		mortalDrawDamageBonusPerLevel = skillsConfig.get("mortalDraw", "damageBonusPerLevel", 10,
 				"Damage bonus per level for Mortal Draw, in percent (10 = +10% per level)", 0, 1000).getInt();
 		mortalDrawExhaustionBase = (float) skillsConfig.get("mortalDraw", "exhaustionBase", 3.0D,
@@ -428,12 +434,14 @@ public class Config
 	public static double getLeapingBlowRangePerLevel() { return leapingBlowRangePerLevel; }
 	public static float getLeapingBlowExhaustionBase() { return leapingBlowExhaustionBase; }
 	public static float getLeapingBlowExhaustionPerLevel() { return leapingBlowExhaustionPerLevel; }
+	public static float getEndingBlowBaseDamageBonus() { return endingBlowBaseDamageBonus; }
 	public static float getEndingBlowDamageBonusPerLevel() { return endingBlowDamageBonusPerLevel; }
 	public static int getEndingBlowDurationBase() { return endingBlowDurationBase; }
 	public static int getEndingBlowDurationPerLevel() { return endingBlowDurationPerLevel; }
 	public static int getEndingBlowAttackWindow() { return endingBlowAttackWindow; }
 	public static float getEndingBlowExhaustionBase() { return endingBlowExhaustionBase; }
 	public static float getEndingBlowExhaustionPerLevel() { return endingBlowExhaustionPerLevel; }
+	public static int getMortalDrawBaseDamageBonus() { return mortalDrawBaseDamageBonus; }
 	public static int getMortalDrawDamageBonusPerLevel() { return mortalDrawDamageBonusPerLevel; }
 	public static float getMortalDrawExhaustionBase() { return mortalDrawExhaustionBase; }
 	public static float getMortalDrawExhaustionPerLevel() { return mortalDrawExhaustionPerLevel; }
