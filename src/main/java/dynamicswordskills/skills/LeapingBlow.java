@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made damage bonus per level and exhaustion configurable.
+ * - Made damage bonus per level, damage multiplier per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -117,14 +117,19 @@ public class LeapingBlow extends SkillActive
 		return false;
 	}
 
-	/** Returns the damage bonus from skill level, based on config */
+	/** Returns the flat damage bonus from skill level, based on config */
 	private float getDamageBonus() {
 		return level * Config.getLeapingBlowDamageBonusPerLevel();
 	}
 
-	/** Returns player's base damage (which includes all attribute bonuses) plus the configurable per-level bonus */
+	/**
+	 * Returns player's base damage, which is the attack attribute value multiplied
+	 * by the per-level damage multiplier, plus the flat per-level bonus.
+	 */
 	private float getDamage(EntityPlayer player) {
-		return (float)(getDamageBonus() + player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue());
+		float attr = (float) player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
+		float multiplier = 1.0F + (level * Config.getLeapingBlowDamageMultiplierPerLevel());
+		return (attr * multiplier) + getDamageBonus();
 	}
 
 	/** Duration of weakness effect; used for tooltip display only */

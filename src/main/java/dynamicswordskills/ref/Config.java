@@ -21,7 +21,7 @@
  * - Added configurable Armor Break damage bonus per level and exhaustion.
  * - Added configurable Sword Beam health allowance, damage factors, range and exhaustion.
  * - Added configurable Back Slice damage bonus and exhaustion.
- * - Added configurable Leaping Blow damage bonus, lifespan, range and exhaustion.
+ * - Added configurable Leaping Blow damage bonus, damage multiplier, lifespan, range and exhaustion.
  * - Added configurable Ending Blow damage bonus, duration formula, attack window and exhaustion.
  * - Added configurable Mortal Draw damage bonus and exhaustion.
  * - Added configurable Basic Sword range, combo size and combo damage bonus.
@@ -129,6 +129,7 @@ public class Config
 	private static float backSliceExhaustionBase;
 	private static float backSliceExhaustionPerLevel;
 	private static float leapingBlowDamageBonusPerLevel;
+	private static float leapingBlowDamageMultiplierPerLevel;
 	private static int leapingBlowLifespanPerLevel;
 	private static double leapingBlowRangeBase;
 	private static double leapingBlowRangePerLevel;
@@ -293,6 +294,8 @@ public class Config
 		/* Leaping Blow */
 		leapingBlowDamageBonusPerLevel = (float) skillsConfig.get("leapingBlow", "damageBonusPerLevel", 1.0D,
 				"Flat damage bonus per level for Leaping Blow (1.0 = +1 damage per level)", 0.0D, 100.0D).getDouble();
+		leapingBlowDamageMultiplierPerLevel = (float) skillsConfig.get("leapingBlow", "damageMultiplierPerLevel", 0.0D,
+				"Additional damage multiplier applied to the player's attack attribute per level for Leaping Blow (0.0 = vanilla behavior; 0.1 = +10% per level)", 0.0D, 10.0D).getDouble();
 		leapingBlowLifespanPerLevel = skillsConfig.get("leapingBlow", "lifespanPerLevel", 1,
 				"Additional lifespan ticks per level for Leaping Blow (1 = vanilla behavior; controls how far the projectile travels)", 0, 100).getInt();
 		leapingBlowRangeBase = skillsConfig.get("leapingBlow", "rangeBase", 3.0D,
@@ -419,6 +422,7 @@ public class Config
 	public static float getBackSliceExhaustionBase() { return backSliceExhaustionBase; }
 	public static float getBackSliceExhaustionPerLevel() { return backSliceExhaustionPerLevel; }
 	public static float getLeapingBlowDamageBonusPerLevel() { return leapingBlowDamageBonusPerLevel; }
+	public static float getLeapingBlowDamageMultiplierPerLevel() { return leapingBlowDamageMultiplierPerLevel; }
 	public static int getLeapingBlowLifespanPerLevel() { return leapingBlowLifespanPerLevel; }
 	public static double getLeapingBlowRangeBase() { return leapingBlowRangeBase; }
 	public static double getLeapingBlowRangePerLevel() { return leapingBlowRangePerLevel; }
