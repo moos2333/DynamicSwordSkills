@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Added configurable damage bonus per level and exhaustion for Armor Break.
+ * - Made base damage bonus, damage bonus per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -210,7 +210,7 @@ public class ArmorBreak extends SkillActive
 	@Override
 	public boolean onAttack(EntityPlayer player, EntityLivingBase entity, DamageSource source, float amount) {
 		activeTimer = 0;
-		amount *= 1.0F + (level * Config.getArmorBreakDamageBonusPerLevel());
+		amount *= 1.0F + (Config.getArmorBreakBaseDamageBonus() + level * Config.getArmorBreakDamageBonusPerLevel());
 		entity.attackEntityFrom(DamageUtils.causeArmorBreakDamage(player), amount);
 		if (!player.getEntityWorld().isRemote) {
 			PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.ARMOR_BREAK, SoundCategory.PLAYERS, 0.4F, 0.5F);

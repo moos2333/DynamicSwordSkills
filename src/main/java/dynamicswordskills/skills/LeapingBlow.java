@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made damage bonus per level, damage multiplier per level and exhaustion configurable.
+ * - Made base damage bonus, damage bonus per level, damage multiplier per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -117,14 +117,14 @@ public class LeapingBlow extends SkillActive
 		return false;
 	}
 
-	/** Returns the flat damage bonus from skill level, based on config */
+	/** Returns the flat damage bonus, combining base and per-level values */
 	private float getDamageBonus() {
-		return level * Config.getLeapingBlowDamageBonusPerLevel();
+		return Config.getLeapingBlowBaseDamageBonus() + (level * Config.getLeapingBlowDamageBonusPerLevel());
 	}
 
 	/**
 	 * Returns player's base damage, which is the attack attribute value multiplied
-	 * by the per-level damage multiplier, plus the flat per-level bonus.
+	 * by the per-level damage multiplier, plus the flat damage bonus.
 	 */
 	private float getDamage(EntityPlayer player) {
 		float attr = (float) player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
@@ -161,7 +161,7 @@ public class LeapingBlow extends SkillActive
 	@SideOnly(Side.CLIENT)
 	public boolean keyPressed(Minecraft mc, KeyBinding key, EntityPlayer player) {
 		if (key == mc.gameSettings.keyBindJump) {
-			if (player.onGround && mc.gameSettings.keyBindUseItem.isKeyDown() && canUse(player)) {
+			if (player.onGround && mc.gameSettings.keyUseItem.isKeyDown() && canUse(player)) {
 				ticksTilFail = 10;
 				return true;
 			}
