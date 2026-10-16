@@ -20,7 +20,7 @@
  * - Split skill-related options into a separate config file: DynamicSwordSkills-skills.cfg
  * - Added configurable Armor Break damage bonus per level and exhaustion.
  * - Added configurable Sword Beam health allowance, damage factors, range and exhaustion.
- * - Added configurable Back Slice damage bonus and exhaustion.
+ * - Added configurable Back Slice base damage bonus, damage bonus and exhaustion.
  * - Added configurable Leaping Blow damage bonus, damage multiplier, lifespan, range and exhaustion.
  * - Added configurable Ending Blow base damage bonus, damage bonus per level, duration formula, attack window and exhaustion.
  * - Added configurable Mortal Draw base damage bonus, damage bonus per level and exhaustion.
@@ -125,6 +125,7 @@ public class Config
 	private static int swordBasicComboSizeBase;
 	private static int swordBasicComboSizePerLevel;
 	private static float swordBasicComboDamageBonus;
+	private static float backSliceBaseDamageBonus;
 	private static float backSliceDamageBonusPerLevel;
 	private static float backSliceExhaustionBase;
 	private static float backSliceExhaustionPerLevel;
@@ -287,6 +288,8 @@ public class Config
 		swordBasicComboDamageBonus = (float) skillsConfig.get("swordBasic", "comboDamageBonus", 1.0D,
 				"Flat damage bonus per combo hit for Basic Sword (1.0 = +1 damage per combo hit, vanilla behavior)", 0.0D, 100.0D).getDouble();
 		/* Back Slice */
+		backSliceBaseDamageBonus = (float) skillsConfig.get("backSlice", "baseDamageBonus", 0.0D,
+				"Base damage bonus for Back Slice (0.0 = vanilla behavior; 0.1 = +10% base)", 0.0D, 10.0D).getDouble();
 		backSliceDamageBonusPerLevel = (float) skillsConfig.get("backSlice", "damageBonusPerLevel", 0.1D,
 				"Damage bonus per level for Back Slice (0.1 = +10% per level)", 0.0D, 10.0D).getDouble();
 		backSliceExhaustionBase = (float) skillsConfig.get("backSlice", "exhaustionBase", 1.0D,
@@ -424,6 +427,7 @@ public class Config
 	public static int getSwordBasicComboSizeBase() { return swordBasicComboSizeBase; }
 	public static int getSwordBasicComboSizePerLevel() { return swordBasicComboSizePerLevel; }
 	public static float getSwordBasicComboDamageBonus() { return swordBasicComboDamageBonus; }
+	public static float getBackSliceBaseDamageBonus() { return backSliceBaseDamageBonus; }
 	public static float getBackSliceDamageBonusPerLevel() { return backSliceDamageBonusPerLevel; }
 	public static float getBackSliceExhaustionBase() { return backSliceExhaustionBase; }
 	public static float getBackSliceExhaustionPerLevel() { return backSliceExhaustionPerLevel; }

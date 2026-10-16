@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made damage bonus per level and exhaustion configurable.
+ * - Made base damage bonus, damage bonus per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -116,7 +116,7 @@ public class BackSlice extends SkillActive
 		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.angle", 360 - (2 * getAttackAngle())).getUnformattedText());
 		String chance = String.format("%.2f", getDisarmorChance(ItemStack.EMPTY, player.getHeldItemMainhand(), level));
 		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.chance", chance).getUnformattedText());
-		desc.add(getDamageDisplay(level * 10, true) + "%");
+		desc.add(getDamageDisplay((int)((Config.getBackSliceBaseDamageBonus() + level * Config.getBackSliceDamageBonusPerLevel()) * 100), true) + "%");
 		desc.add(getExhaustionDisplay(getExhaustion()));
 	}
 
@@ -320,7 +320,7 @@ public class BackSlice extends SkillActive
 		impacted = true;
 		if (isActive() && dodgeTimer <= (getActiveTime() - 5)) { // can strike any time after 5 ticks have passed
 			if (!TargetUtils.isTargetInFrontOf(entity, player, getAttackAngle())) {
-				amount *= 1.0F + (level * Config.getBackSliceDamageBonusPerLevel());
+				amount *= 1.0F + (Config.getBackSliceBaseDamageBonus() + level * Config.getBackSliceDamageBonusPerLevel());
 				PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.MORTAL_DRAW, SoundCategory.PLAYERS, 0.4F, 0.5F);
 				success = true;
 			}
