@@ -161,7 +161,7 @@ public class LeapingBlow extends SkillActive
 	@SideOnly(Side.CLIENT)
 	public boolean keyPressed(Minecraft mc, KeyBinding key, EntityPlayer player) {
 		if (key == mc.gameSettings.keyBindJump) {
-			if (player.onGround && mc.gameSettings.keyUseItem.isKeyDown() && canUse(player)) {
+			if (player.onGround && mc.gameSettings.keyBindUseItem.isKeyDown() && canUse(player)) {
 				ticksTilFail = 10;
 				return true;
 			}
