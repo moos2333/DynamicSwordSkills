@@ -1,18 +1,24 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - Made base damage bonus, damage bonus per level, weapon damage factor,
+ *   weapon damage factor per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
@@ -47,9 +53,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import swordskillsapi.api.item.IDashItem;
 
 /**
- * 
+ *
  * The player charges into the target, inflicting damage and knocking the target back.
- * 
+ *
  * Activation: Press the attack key while moving forward and blocking
  * Range: 3 blocks plus 1 block per level
  * Damage: up to 2 plus 1 per level at max range
@@ -58,7 +64,7 @@ import swordskillsapi.api.item.IDashItem;
  * Special: Must be at least 2 blocks away from target when skill is activated to
  * 			inflict damage, minus 0.2F per level (down to 1 block at level 5)
  * Special: Effects that increase player speed increase the effective range, damage, and knockback.
- * 
+ *
  */
 public class Dash extends SkillActive
 {
@@ -99,7 +105,7 @@ public class Dash extends SkillActive
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
-		desc.add(getDamageDisplay(getDamage(), false));
+		desc.add(getDamageDisplay(getDamage(player), false));
 		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.knockback", String.format("%.1f", getKnockback())).getUnformattedText());
 		desc.add(getRangeDisplay(getRange()));
 		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.min_range", String.format("%.1f", getMinDistance())).getUnformattedText());
@@ -123,12 +129,22 @@ public class Dash extends SkillActive
 
 	@Override
 	protected float getExhaustion() {
-		return 1.0F - (0.05F * level);
+		return Config.getDashExhaustionBase() - (level * Config.getDashExhaustionPerLevel());
 	}
 
-	/** Damage is base damage plus one per level */
-	private int getDamage() {
-		return (2 + level);
+	/** Returns the flat damage bonus, combining base and per-level values */
+	private float getDamageBonus() {
+		return Config.getDashBaseDamageBonus() + (level * Config.getDashDamageBonusPerLevel());
+	}
+
+	/**
+	 * Returns the base damage for this skill, combining the player's attack attribute
+	 * (weighted by the configured weapon damage factors) with the flat damage bonus.
+	 */
+	private float getDamage(EntityPlayer player) {
+		float factor = Config.getDashWeaponDamageFactor() + (level * Config.getDashWeaponDamageFactorPerLevel());
+		float attr = (float) player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
+		return (attr * factor) + getDamageBonus();
 	}
 
 	/** Returns base knockback strength, not accounting for distance traveled */
@@ -232,7 +248,7 @@ public class Dash extends SkillActive
 					if (player.isInWater() || player.isInLava()) {
 						speed *= 0.15D;
 					}
-					if (player.onGround) { 
+					if (player.onGround) {
 						trajectory = player.getLookVec();
 					}
 					player.addVelocity(trajectory.x * speed, -0.02D, trajectory.z * speed);
@@ -289,7 +305,7 @@ public class Dash extends SkillActive
 				sf *= 0.3D;
 			}
 			if (speed > 0.075D && (distance - bbMod) > getMinDistance() && distance < (getRange() + 1.0D) && player.getDistanceSq(target) < 6.0D) {
-				float dmg = (float)(sf * (float)getDamage() * distance / getRange());
+				float dmg = (float)(sf * getDamage(player) * distance / getRange());
 				impactTime = 5; // time player will be immune to damage from the target entity
 				target.attackEntityFrom(DamageSource.causePlayerDamage(player), dmg);
 				if (target instanceof EntityLivingBase) {
@@ -333,7 +349,7 @@ public class Dash extends SkillActive
 	/**
 	 * After calling this method, {@link #isAnimating()} will always return false;
 	 * {@link #isActive()} will return false if no entity was impacted, otherwise it
-	 * will still be true for {@link #impactTime} ticks to prevent damage from the {@link #target}. 
+	 * will still be true for {@link #impactTime} ticks to prevent damage from the {@link #target}.
 	 */
 	private void setNotDashing(EntityPlayer player) {
 		isActive = false;

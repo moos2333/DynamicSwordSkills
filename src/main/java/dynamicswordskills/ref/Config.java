@@ -25,6 +25,8 @@
  * - Added configurable Ending Blow base damage bonus, damage bonus per level, duration formula, attack window and exhaustion.
  * - Added configurable Mortal Draw base damage bonus, damage bonus per level and exhaustion.
  * - Added configurable Basic Sword range, combo size and combo damage bonus.
+ * - Added configurable Dash base damage bonus, damage bonus per level, weapon damage factor,
+ *   weapon damage factor per level and exhaustion.
  */
 
 package dynamicswordskills.ref;
@@ -149,6 +151,12 @@ public class Config
 	private static int mortalDrawDamageBonusPerLevel;
 	private static float mortalDrawExhaustionBase;
 	private static float mortalDrawExhaustionPerLevel;
+	private static float dashBaseDamageBonus;
+	private static float dashDamageBonusPerLevel;
+	private static float dashWeaponDamageFactor;
+	private static float dashWeaponDamageFactorPerLevel;
+	private static float dashExhaustionBase;
+	private static float dashExhaustionPerLevel;
 	/*================== DROPS =====================*/
 	private static boolean bonusOrbEnable;
 	private static int orbLootWeight;
@@ -341,6 +349,19 @@ public class Config
 				"Base exhaustion for Mortal Draw", 0.0D, 100.0D).getDouble();
 		mortalDrawExhaustionPerLevel = (float) skillsConfig.get("mortalDraw", "exhaustionPerLevel", 0.2D,
 				"Exhaustion reduction per level for Mortal Draw (subtracted from base)", 0.0D, 100.0D).getDouble();
+		/* Dash */
+		dashBaseDamageBonus = (float) skillsConfig.get("dash", "baseDamageBonus", 2.0D,
+				"Base flat damage bonus for Dash (2.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		dashDamageBonusPerLevel = (float) skillsConfig.get("dash", "damageBonusPerLevel", 1.0D,
+				"Flat damage bonus per level for Dash (1.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		dashWeaponDamageFactor = (float) skillsConfig.get("dash", "weaponDamageFactor", 0.0D,
+				"Base weapon attack damage factor for Dash (0.0 = vanilla, weapon damage ignored; 1.0 = weapon attack damage fully inherited)", 0.0D, 10.0D).getDouble();
+		dashWeaponDamageFactorPerLevel = (float) skillsConfig.get("dash", "weaponDamageFactorPerLevel", 0.0D,
+				"Additional weapon attack damage factor per level for Dash (0.0 = no scaling; 0.1 = +10% weapon damage per level)", 0.0D, 10.0D).getDouble();
+		dashExhaustionBase = (float) skillsConfig.get("dash", "exhaustionBase", 1.0D,
+				"Base exhaustion for Dash", 0.0D, 100.0D).getDouble();
+		dashExhaustionPerLevel = (float) skillsConfig.get("dash", "exhaustionPerLevel", 0.05D,
+				"Exhaustion reduction per level for Dash (subtracted from base)", 0.0D, 100.0D).getDouble();
 		if (skillsConfig.hasChanged()) {
 			skillsConfig.save();
 		}
@@ -457,6 +478,12 @@ public class Config
 	public static int getMortalDrawDamageBonusPerLevel() { return mortalDrawDamageBonusPerLevel; }
 	public static float getMortalDrawExhaustionBase() { return mortalDrawExhaustionBase; }
 	public static float getMortalDrawExhaustionPerLevel() { return mortalDrawExhaustionPerLevel; }
+	public static float getDashBaseDamageBonus() { return dashBaseDamageBonus; }
+	public static float getDashDamageBonusPerLevel() { return dashDamageBonusPerLevel; }
+	public static float getDashWeaponDamageFactor() { return dashWeaponDamageFactor; }
+	public static float getDashWeaponDamageFactorPerLevel() { return dashWeaponDamageFactorPerLevel; }
+	public static float getDashExhaustionBase() { return dashExhaustionBase; }
+	public static float getDashExhaustionPerLevel() { return dashExhaustionPerLevel; }
 	public static float getHealthAllowance(int level) {
 		return (requireFullHealth ? 0.0F : (0.6F * level));
 	}
@@ -477,7 +504,7 @@ public class Config
 
 	public static void syncClientSettings(SyncConfigPacket msg) {
 		if (!msg.isMessageValid()) {
-			DynamicSwordSkills.logger.error("Invalid SyncConfigPacket attempting to process!");
+			logger.error("Invalid SyncConfigPacket attempting to process!");
 			return;
 		}
 		Config.baseSwingSpeed = msg.baseSwingSpeed;
