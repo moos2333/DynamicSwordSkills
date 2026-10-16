@@ -261,7 +261,7 @@ public class Config
 		/* Armor Break */
 		armorBreakBaseDamageBonus = (float) skillsConfig.get("armorBreak", "baseDamageBonus", 0.0D,
 				"Base damage bonus for Armor Break (0.0 = vanilla behavior; 0.1 = +10% base)", 0.0D, 10.0D).getDouble();
-		armorBreakDamageBonusPerLevel = (float) skillsConfig.get("armorBreak", "damageBonusPerLevel", 0.1D,
+		armorBreakDamageBonusPerLevel = (float) skillsConfig.get("armorBreak", "damageBonusPerLevel", 0.0D,
 				"Damage bonus per level for Armor Break (0.1 = +10% per level; 0.0 = no scaling)", 0.0D, 10.0D).getDouble();
 		armorBreakExhaustionBase = (float) skillsConfig.get("armorBreak", "exhaustionBase", 2.0D,
 				"Base exhaustion for Armor Break", 0.0D, 100.0D).getDouble();

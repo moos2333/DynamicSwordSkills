@@ -17,135 +17,179 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made base damage bonus, damage bonus per level, damage multiplier per level and exhaustion configurable.
+ * - Made base damage bonus, damage bonus per level, weapon damage factor,
+ *   weapon damage factor per level and exhaustion configurable.
  */
 
 package dynamicswordskills.skills;
 
 import java.util.List;
 
-import dynamicswordskills.DSSCombatEvents;
-import dynamicswordskills.api.SkillGroup;
-import dynamicswordskills.client.DSSClientEvents;
-import dynamicswordskills.entity.EntityLeapingBlow;
+import dynamicswordskills.entity.DSSPlayerInfo;
+import dynamicswordskills.network.PacketDispatcher;
+import dynamicswordskills.network.server.DashImpactPacket;
 import dynamicswordskills.ref.Config;
 import dynamicswordskills.ref.ModSounds;
 import dynamicswordskills.util.PlayerUtils;
 import dynamicswordskills.util.TargetUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.network.play.server.SPacketEntityVelocity;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
-import net.minecraftforge.event.entity.player.PlayerFlyableFallEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import swordskillsapi.api.item.IDashItem;
 
 /**
  *
- * LEAPING BLOW
- * Activation: Jump while holding block, then attack (shield is not required)
- * Damage: Regular sword damage (without enchantment bonuses), +1 extra damage per skill level
- * Effect: Adds Weakness I for (50 + (10 * level)) ticks
- * Range: Technique travels roughly 3 blocks + 1/2 block per level
- * Area: Approximately (0.5F + (0.25F * level)) radius in a straight line
- * Exhaustion: 2.0F minus 0.1F per level (1.5F at level 5)
+ * The player charges into the target, inflicting damage and knocking the target back.
  *
- * Upon landing, all targets directly in front of the player take damage and
- * are weakened temporarily.
+ * Activation: Press the attack key while moving forward and blocking
+ * Range: 3 blocks plus 1 block per level
+ * Damage: up to 2 plus 1 per level at max range
+ * Knockback Strength: 0.4F per level plus an additional 0.15F per block traveled beyond the minimum (capped at 3.0F)
+ * Exhaustion: Light [1.0F - (level * 0.05F)]
+ * Special: Must be at least 2 blocks away from target when skill is activated to
+ * 			inflict damage, minus 0.2F per level (down to 1 block at level 5)
+ * Special: Effects that increase player speed increase the effective range, damage, and knockback.
  *
  */
-public class LeapingBlow extends SkillActive
+public class Dash extends SkillActive
 {
-	/** Activation window for pressing the attack key, set when player initially leaps */
-	private int ticksTilFail;
+	/** Player's base movement speed */
+	public static final double BASE_MOVE = 0.10000000149011612D;
 
-	/** Set to true when activated; set to false upon landing */
+	/** True when Slam is used and while the player is in motion towards the target */
 	private boolean isActive = false;
 
-	public LeapingBlow(String translationKey) {
+	/** Number of ticks since activation */
+	private int activeTime;
+
+	/** Trajectory based on player's last look vector while on the ground */
+	private Vec3d trajectory;
+
+	/** Player's starting position is used to determine actual distance traveled upon impact */
+	private Vec3d initialPosition;
+
+	/** Target acquired from ILockOnTarget skill; set to the entity hit upon impact */
+	private Entity target;
+
+	/** Impact timer used to make player immune to damage from struck target only, vs. setting hurtResistantTime */
+	private int impactTime;
+
+	public Dash(String translationKey) {
 		super(translationKey);
 	}
 
-	private LeapingBlow(LeapingBlow skill) {
+	private Dash(Dash skill) {
 		super(skill);
 	}
 
 	@Override
-	public LeapingBlow newInstance() {
-		return new LeapingBlow(this);
-	}
-
-	@Override
-	public boolean displayInGroup(SkillGroup group) {
-		return super.displayInGroup(group) || group == Skills.SWORD_GROUP;
+	public Dash newInstance() {
+		return new Dash(this);
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(List<String> desc, EntityPlayer player) {
-		desc.add(getDamageDisplay(Math.round(getDamageBonus()), true));
-		desc.add(getRangeDisplay((float)(Config.getLeapingBlowRangeBase() + Config.getLeapingBlowRangePerLevel() * level)));
-		desc.add(getAreaDisplay(0.5F + 0.25F * level));
-		desc.add(getDurationDisplay(getPotionDuration(player), false));
+		desc.add(getDamageDisplay(getDamage(player), false));
+		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.knockback", String.format("%.1f", getKnockback())).getUnformattedText());
+		desc.add(getRangeDisplay(getRange()));
+		desc.add(new TextComponentTranslation(getTranslationKey() + ".info.min_range", String.format("%.1f", getMinDistance())).getUnformattedText());
 		desc.add(getExhaustionDisplay(getExhaustion()));
 	}
 
 	@Override
 	public boolean isActive() {
-		return isActive;
+		return isActive || impactTime > 0;
 	}
 
-	@Override
-	public boolean isAnimating() {
-		return isActive() || ticksTilFail > 0;
+	/** Maximum active time in case player is unable to move an appropriate amount of distance */
+	protected int getMaxActiveTime() {
+		return 14 + (2 * level);
+	}
+
+	/** Number of ticks the player will not be able to block or use an item after impact */
+	private int getBlockCooldown() {
+		return (30 - (2 * level));
 	}
 
 	@Override
 	protected float getExhaustion() {
-		return Config.getLeapingBlowExhaustionBase() - (level * Config.getLeapingBlowExhaustionPerLevel());
-	}
-
-	/**
-	 * LeapingBlow adds exhaustion after entity is spawned, rather than on initial activation
-	 */
-	@Override
-	protected boolean autoAddExhaustion() {
-		return false;
+		return Config.getDashExhaustionBase() - (level * Config.getDashExhaustionPerLevel());
 	}
 
 	/** Returns the flat damage bonus, combining base and per-level values */
 	private float getDamageBonus() {
-		return Config.getLeapingBlowBaseDamageBonus() + (level * Config.getLeapingBlowDamageBonusPerLevel());
+		return Config.getDashBaseDamageBonus() + (level * Config.getDashDamageBonusPerLevel());
 	}
 
 	/**
-	 * Returns player's base damage, which is the attack attribute value multiplied
-	 * by the per-level damage multiplier, plus the flat damage bonus.
+	 * Returns the base damage for this skill, combining the player's attack attribute
+	 * (weighted by the configured weapon damage factors) with the flat damage bonus.
 	 */
 	private float getDamage(EntityPlayer player) {
+		float factor = Config.getDashWeaponDamageFactor() + (level * Config.getDashWeaponDamageFactorPerLevel());
 		float attr = (float) player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
-		float multiplier = 1.0F + (level * Config.getLeapingBlowDamageMultiplierPerLevel());
-		return (attr * multiplier) + getDamageBonus();
+		return (attr * factor) + getDamageBonus();
 	}
 
-	/** Duration of weakness effect; used for tooltip display only */
-	private int getPotionDuration(EntityPlayer player) {
-		return (50 + (level * 10));
+	/** Returns base knockback strength, not accounting for distance traveled */
+	private float getKnockback() {
+		return 0.4F * level;
+	}
+
+	/** Range increases by 1 block per level */
+	private double getRange() {
+		return (3.0D + level);
+	}
+
+	/** Minimum distance the player must cover before the dash is effective */
+	private double getMinDistance() {
+		return 2.0D - (0.2D * level);
 	}
 
 	@Override
 	public boolean canUse(EntityPlayer player) {
-		return super.canUse(player) && !isActive() && PlayerUtils.isSwordOrProvider(player.getHeldItemMainhand(), this) && !TargetUtils.isInLiquid(player);
+		boolean flag = PlayerUtils.isBlocking(player);
+		for (EnumHand hand : EnumHand.values()) {
+			if (canItemDash(player, hand)) {
+				flag = true;
+				break;
+			}
+		}
+		return (flag && super.canUse(player) && !isActive());
+	}
+
+	/**
+	 * Returns true if the item held in the given hand is an {@link IDashItem}
+	 * and {@link IDashItem#canDash(ItemStack, EntityPlayer, EnumHand) IDashItem#canDash} returns true.
+	 */
+	private boolean canItemDash(EntityPlayer player, EnumHand hand) {
+		ItemStack stack = player.getHeldItem(hand);
+		if (stack.getItem() instanceof IDashItem) {
+			return ((IDashItem) stack.getItem()).canDash(stack, player, hand);
+		}
+		return false;
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
 	public boolean canExecute(EntityPlayer player) {
-		return ticksTilFail > 0 && !player.onGround && canUse(player);
+		return player.onGround && canUse(player) && Minecraft.getMinecraft().gameSettings.keyBindForward.isKeyDown();
 	}
 
 	@Override
@@ -154,81 +198,165 @@ public class LeapingBlow extends SkillActive
 		if (Config.requiresLockOn() && !isLockedOn) {
 			return false;
 		}
-		return (key == mc.gameSettings.keyBindJump || key == mc.gameSettings.keyBindAttack);
+		return key == mc.gameSettings.keyBindAttack;
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
 	public boolean keyPressed(Minecraft mc, KeyBinding key, EntityPlayer player) {
-		if (key == mc.gameSettings.keyBindJump) {
-			if (player.onGround && mc.gameSettings.keyBindUseItem.isKeyDown() && canUse(player)) {
-				ticksTilFail = 10;
-				return true;
-			}
-		} else if (canExecute(player) && activate(player)) {
-			KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
-			DSSCombatEvents.setPlayerAttackTime(player); // prevent left-click spam
-			return true;
-		}
-		return false;
+		return canExecute(player) && activate(player);
 	}
 
 	@Override
 	protected boolean onActivated(World world, EntityPlayer player) {
 		isActive = true;
-		ticksTilFail = 0;
+		activeTime = 0;
+		player.setSprinting(true);
+		trajectory = player.getLookVec();
+		initialPosition = new Vec3d(player.posX, player.posY, player.posZ);
 		return isActive();
 	}
 
 	@Override
 	protected void onDeactivated(World world, EntityPlayer player) {
-		isActive = false;
-		ticksTilFail = 0;
+		initialPosition = null;
+		impactTime = 0; // no longer active, target will be set to null from setNotDashing
+		setNotDashing(player); // sets all remaining fields to 0 or null
 	}
 
 	@Override
 	public void onUpdate(EntityPlayer player) {
-		// Handle on client because onGround is always true on the server
-		if (player.getEntityWorld().isRemote) {
-			if (isActive() && (player.onGround || TargetUtils.isInLiquid(player))) {
-				deactivate(player);
-			} else if (ticksTilFail > 0) {
-				--ticksTilFail;
+		if (impactTime > 0) {
+			--impactTime;
+			if (impactTime == 0) {
+				target = null;
 			}
 		}
-	}
-
-	@Override
-	public boolean onFall(EntityPlayer player, LivingFallEvent event) {
-		onFall(player, event.getDistance());
-		return true;
-	}
-
-	@Override
-	public boolean onCreativeFall(EntityPlayer player, PlayerFlyableFallEvent event) {
-		onFall(player, event.getDistance());
-		return true;
-	}
-
-	private void onFall(EntityPlayer player, float distance) {
-		if (isActive() && PlayerUtils.isSwordOrProvider(player.getHeldItemMainhand(), this)) {
-			if (player.getEntityWorld().isRemote) {
-				if (distance < 1.0F) {
-					DSSClientEvents.handlePlayerAttack(Minecraft.getMinecraft());
-				} else {
-					player.swingArm(EnumHand.MAIN_HAND);
-					player.resetCooldown();
+		// don't use isActive() method, as that also returns true after impact
+		if (isActive) {
+			player.setSprinting(true);
+			// Only check for impact on the client, as the server is not reliable for this step
+			// If a collision is detected, DashImpactPacket is sent to conclude the server-side
+			if (!PlayerUtils.isBlocking(player)) {
+				if (!player.getEntityWorld().isRemote) {
+					deactivate(player);
 				}
-			} else if (distance >= 1.0F) {
-				// add exhaustion here, now that skill has truly activated:
-				player.addExhaustion(getExhaustion());
-				EntityLeapingBlow entity = new EntityLeapingBlow(player.getEntityWorld(), player).setDamage(getDamage(player)).setLevel(level);
-				entity.shoot(player, player.rotationPitch, player.rotationYaw, 0.0F, entity.getVelocity(), 1.0F);
-				player.getEntityWorld().spawnEntity(entity);
-				PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.LEAPING_BLOW, SoundCategory.PLAYERS, 0.4F, 0.5F);
-				player.resetCooldown();
+			} else if (player.getEntityWorld().isRemote) {
+				if (trajectory != null) {
+					double bonus = 1.0D + (0.1D * level);
+					double speed = bonus * player.getAttributeMap().getAttributeInstance(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue();
+					if (player.isInWater() || player.isInLava()) {
+						speed *= 0.15D;
+					}
+					if (player.onGround) {
+						trajectory = player.getLookVec();
+					}
+					player.addVelocity(trajectory.x * speed, -0.02D, trajectory.z * speed);
+				}
+				RayTraceResult result = TargetUtils.checkForImpact(player.getEntityWorld(), player, player, 0.5D, false);
+				if (result != null || player.collidedHorizontally) {
+					PacketDispatcher.sendToServer(new DashImpactPacket(player, result));
+					player.resetCooldown(); // player effectively made an attack
+					// Force player to stop blocking upon impact
+					DSSPlayerInfo.get(player).setUseItemCooldown(getBlockCooldown());
+					KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindUseItem.getKeyCode(), false);
+					impactTime = 5;
+					if (result != null && result.typeOfHit == RayTraceResult.Type.ENTITY) {
+						target = result.entityHit;
+					}
+					double d = (player.onGround ? 2.0D : 0.5D);
+					double dy = (player.onGround ? 0.3D : -0.15D);
+					player.setVelocity(-player.motionX * d, dy, -player.motionZ * d);
+					setNotDashing(player);
+				} else if (initialPosition == null || player.getDistance(initialPosition.x, initialPosition.y, initialPosition.z) > getRange()) {
+					player.addVelocity(-player.motionX * 0.5D, -0.02D, -player.motionZ * 0.5D);
+					deactivate(player);
+				} else if (!Minecraft.getMinecraft().gameSettings.keyBindForward.isKeyDown()) {
+					deactivate(player);
+				}
 			}
 		}
-		onDeactivated(player.getEntityWorld(), player);
+		// Update active time if still active
+		if (isActive) {
+			++activeTime;
+			if (activeTime > getMaxActiveTime()) {
+				if (!player.getEntityWorld().isRemote) {
+					deactivate(player);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Called on the server from {@link DashImpactPacket} to process the impact data from the client
+	 * @param player	Player's motionX and motionZ have been set by the packet, so the values may be used
+	 * @param mop	Null assumes a block was hit (none of the block data is needed, so it is not sent),
+	 * 				or a valid MovingObjectPosition for the entity hit
+	 */
+	public void onImpact(World world, EntityPlayer player, RayTraceResult result) {
+		if (result != null && result.typeOfHit == RayTraceResult.Type.ENTITY) {
+			target = result.entityHit;
+			double distance = target.getDistance(initialPosition.x, initialPosition.y, initialPosition.z);
+			// Subtract hitbox modifier when comparing min distance to avoid hitting enemies right in front of the player
+			double bbMod = (target.width / 2.0F) + (player.width / 2.0F);
+			double speed = player.getAttributeMap().getAttributeInstance(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue();
+			double sf = (1.0D + (speed - BASE_MOVE)); // speed factor
+			if (player.isInWater() || player.isInLava()) {
+				sf *= 0.3D;
+			}
+			if (speed > 0.075D && (distance - bbMod) > getMinDistance() && distance < (getRange() + 1.0D) && player.getDistanceSq(target) < 6.0D) {
+				float dmg = (float)(sf * getDamage(player) * distance / getRange());
+				impactTime = 5; // time player will be immune to damage from the target entity
+				target.attackEntityFrom(DamageSource.causePlayerDamage(player), dmg);
+				if (target instanceof EntityLivingBase) {
+					float db = 0.15F * (float)(distance - getMinDistance());
+					float k = (float)sf * Math.min(db + getKnockback(), 3.0F);
+					TargetUtils.knockTargetBack((EntityLivingBase) target, player, 0.5F * k);
+				}
+				if (target instanceof EntityPlayerMP && !player.getEntityWorld().isRemote) {
+					((EntityPlayerMP) target).connection.sendPacket(new SPacketEntityVelocity(target));
+				}
+			}
+		}
+		DSSPlayerInfo.get(player).setUseItemCooldown(getBlockCooldown());
+		PlayerUtils.playSoundAtEntity(player.getEntityWorld(), player, ModSounds.SLAM, SoundCategory.PLAYERS, 0.4F, 0.5F);
+		setNotDashing(player);
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public boolean isAnimating() {
+		return isActive; // don't continue render tick updates after impact
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public boolean onRenderTick(EntityPlayer player, float partialTickTime) {
+		player.setSprinting(true); // required for a smooth experience and sprinting particle effects
+		return false; // this skill doesn't need to control the camera
+	}
+
+	@Override
+	public boolean onBeingAttacked(EntityPlayer player, DamageSource source) {
+		if (impactTime > 0 && source.getTrueSource() == target) {
+			return true;
+		} else if (source.damageType.equals("mob") && source.getTrueSource() != null && player.getDistanceSq(source.getTrueSource()) < 6.0D) {
+			return true; // stop stupid zombies from hitting player right before impact
+		}
+		return false;
+	}
+
+	/**
+	 * After calling this method, {@link #isAnimating()} will always return false;
+	 * {@link #isActive()} will return false if no entity was impacted, otherwise it
+	 * will still be true for {@link #impactTime} ticks to prevent damage from the {@link #target}.
+	 */
+	private void setNotDashing(EntityPlayer player) {
+		isActive = false;
+		player.setSprinting(false);
+		trajectory = null;
+		if (!isActive()) {
+			target = null;
+		}
 	}
 }

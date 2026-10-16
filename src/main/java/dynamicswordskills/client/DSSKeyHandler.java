@@ -1,18 +1,23 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - onKeyReleased: guard check moved before key binding lookup
  */
 
 package dynamicswordskills.client;
@@ -41,14 +46,14 @@ public class DSSKeyHandler
 	private final Minecraft mc;
 
 	/** Key index for easy handling and retrieval of keys and key descriptions */
-	public static final byte 
-	KEY_SKILL_ACTIVATE = 0,
-	KEY_NEXT_TARGET = 1,
-	KEY_SKILLS_GUI = 2,
-	KEY_FORWARD = 3,
-	KEY_BACK = 4,
-	KEY_LEFT = 5,
-	KEY_RIGHT = 6;
+	public static final byte
+			KEY_SKILL_ACTIVATE = 0,
+			KEY_NEXT_TARGET = 1,
+			KEY_SKILLS_GUI = 2,
+			KEY_FORWARD = 3,
+			KEY_BACK = 4,
+			KEY_LEFT = 5,
+			KEY_RIGHT = 6;
 
 	/** Key descriptions - this is what the player sees when changing key bindings in-game */
 	private static final String[] desc = {
@@ -124,9 +129,11 @@ public class DSSKeyHandler
 	 * @param kb	The key code of the key released; for the mouse, this is the mouse button number minus 100
 	 */
 	public static void onKeyReleased(Minecraft mc, int kb) {
-		KeyBinding key = getKeyBindFromCode(mc, kb);
-		if (key != null && mc.inGameHasFocus && mc.player != null) {
-			DSSPlayerInfo.get(mc.player).onKeyReleased(mc, key);
+		if (mc.inGameHasFocus && mc.player != null) {
+			KeyBinding key = getKeyBindFromCode(mc, kb);
+			if (key != null) {
+				DSSPlayerInfo.get(mc.player).onKeyReleased(mc, key);
+			}
 		}
 	}
 
@@ -200,7 +207,7 @@ public class DSSKeyHandler
 	 * Returns whether the key usage is controlled by the Config#allowVanillaControls setting, i.e. WASD
 	 */
 	public static boolean isVanillaControl(Minecraft mc, KeyBinding key) {
-		return (key == mc.gameSettings.keyBindLeft 
+		return (key == mc.gameSettings.keyBindLeft
 				|| key == mc.gameSettings.keyBindRight
 				|| key == mc.gameSettings.keyBindForward
 				|| key == mc.gameSettings.keyBindBack);

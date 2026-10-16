@@ -1,18 +1,24 @@
 /**
-    Copyright (C) <2017> <coolAlias>
+ Copyright (C) <2017> <coolAlias>
 
-    This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
-    you can redistribute it and/or modify it under the terms of the GNU
-    General Public License as published by the Free Software Foundation,
-    either version 3 of the License, or (at your option) any later version.
+ This file is part of coolAlias' Dynamic Sword Skills Minecraft Mod; as such,
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License as published by the Free Software Foundation,
+ either version 3 of the License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Modified by moos2333 on 2026-10-16:
+ * - checkForImpact: removed redundant Vec3d reallocations after rayTraceBlocks
+ * - acquireLookTarget / acquireAllLookTargets: hoisted vec3.length() out of traversal loop
  */
 
 package dynamicswordskills.util;
@@ -45,7 +51,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 
 /**
- * 
+ *
  * A collection of methods related to target acquisition
  *
  */
@@ -88,8 +94,6 @@ public class TargetUtils
 		Vec3d vec3 = new Vec3d(entity.posX, posY, entity.posZ);
 		Vec3d vec31 = new Vec3d(entity.posX + entity.motionX, posY + entity.motionY, entity.posZ + entity.motionZ);
 		RayTraceResult result = world.rayTraceBlocks(vec3, vec31, false, true, false);
-		vec3 = new Vec3d(entity.posX, posY, entity.posZ);
-		vec31 = new Vec3d(entity.posX + entity.motionX, posY + entity.motionY, entity.posZ + entity.motionZ);
 		if (result != null) {
 			vec31 = new Vec3d(result.hitVec.x, result.hitVec.y, result.hitVec.z);
 		}
@@ -199,6 +203,7 @@ public class TargetUtils
 		EntityLivingBase currentTarget = null;
 		double currentDistance = MAX_DISTANCE_SQ;
 		Vec3d vec3 = seeker.getLookVec();
+		double stepDistance = vec3.length();
 		double targetX = seeker.posX;
 		double targetY = seeker.posY + seeker.getEyeHeight() - 0.10000000149011612D;
 		double targetZ = seeker.posZ;
@@ -207,7 +212,7 @@ public class TargetUtils
 			targetX += vec3.x;
 			targetY += vec3.y;
 			targetZ += vec3.z;
-			distanceTraveled += vec3.length();
+			distanceTraveled += stepDistance;
 			AxisAlignedBB bb = new AxisAlignedBB(targetX-radius, targetY-radius, targetZ-radius, targetX+radius, targetY+radius, targetZ+radius);
 			List<EntityLivingBase> list = seeker.getEntityWorld().getEntitiesWithinAABB(EntityLivingBase.class, bb);
 			for (EntityLivingBase target : list) {
@@ -238,6 +243,7 @@ public class TargetUtils
 		}
 		List<EntityLivingBase> targets = new ArrayList<EntityLivingBase>();
 		Vec3d vec3 = seeker.getLookVec();
+		double stepDistance = vec3.length();
 		double targetX = seeker.posX;
 		double targetY = seeker.posY + seeker.getEyeHeight() - 0.10000000149011612D;
 		double targetZ = seeker.posZ;
@@ -246,7 +252,7 @@ public class TargetUtils
 			targetX += vec3.x;
 			targetY += vec3.y;
 			targetZ += vec3.z;
-			distanceTraveled += vec3.length();
+			distanceTraveled += stepDistance;
 			AxisAlignedBB bb = new AxisAlignedBB(targetX-radius, targetY-radius, targetZ-radius, targetX+radius, targetY+radius, targetZ+radius);
 			List<EntityLivingBase> list = seeker.getEntityWorld().getEntitiesWithinAABB(EntityLivingBase.class, bb);
 			for (EntityLivingBase target : list) {
