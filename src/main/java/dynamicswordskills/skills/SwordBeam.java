@@ -17,7 +17,7 @@
 
 /*
  * Modified by moos2333 on 2026-10-16:
- * - Made health allowance, base damage factor, per-level damage factor, range and exhaustion configurable.
+ * - Made health allowance, base damage factor, per-level damage factor, range, exhaustion, cooldown and full cooldown requirement configurable.
  */
 
 package dynamicswordskills.skills;
@@ -125,6 +125,9 @@ public class SwordBeam extends SkillActive
 
 	@Override
 	public boolean canUse(EntityPlayer player) {
+		if (Config.getSwordBeamRequireFullCooldown() && player.getCooledAttackStrength(0.5F) < 0.99F) {
+			return false;
+		}
 		return super.canUse(player) && checkHealth(player) && !player.isHandActive() && DSSPlayerInfo.get(player).canAttack() && PlayerUtils.isSwordOrProvider(player.getHeldItemMainhand(), this);
 	}
 
@@ -164,7 +167,8 @@ public class SwordBeam extends SkillActive
 			beam.shoot(player, player.rotationPitch, player.rotationYaw, 0.0F, beam.getVelocity(), 1.0F);
 			world.spawnEntity(beam);
 		} else {
-			DSSPlayerInfo.get(player).setAttackCooldown(20 - level);
+			int cooldown = Math.max(0, Config.getSwordBeamCooldownBase() - (level * Config.getSwordBeamCooldownPerLevel()));
+			DSSPlayerInfo.get(player).setAttackCooldown(cooldown);
 		}
 		player.swingArm(EnumHand.MAIN_HAND);
 		player.resetCooldown();

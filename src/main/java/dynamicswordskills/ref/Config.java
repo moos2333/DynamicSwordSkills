@@ -19,7 +19,7 @@
  * Modified by moos2333 on 2026-10-16:
  * - Split skill-related options into a separate config file: DynamicSwordSkills-skills.cfg
  * - Added configurable Armor Break base damage bonus, damage bonus and exhaustion.
- * - Added configurable Sword Beam health allowance, damage factors, range and exhaustion.
+ * - Added configurable Sword Beam health allowance, damage factors, range, exhaustion, cooldown and full cooldown requirement.
  * - Added configurable Back Slice base damage bonus, damage bonus and exhaustion.
  * - Added configurable Leaping Blow base damage bonus, damage bonus, damage multiplier, lifespan, range and exhaustion.
  * - Added configurable Ending Blow base damage bonus, damage bonus per level, duration formula, attack window and exhaustion.
@@ -123,6 +123,9 @@ public class Config
 	private static int swordBeamRangePerLevel;
 	private static float swordBeamExhaustionBase;
 	private static float swordBeamExhaustionPerLevel;
+	private static int swordBeamCooldownBase;
+	private static int swordBeamCooldownPerLevel;
+	private static boolean swordBeamRequireFullCooldown;
 	private static int swordBasicRangeBase;
 	private static int swordBasicRangePerLevel;
 	private static int swordBasicComboSizeBase;
@@ -288,6 +291,12 @@ public class Config
 				"Base exhaustion for Sword Beam", 0.0D, 100.0D).getDouble();
 		swordBeamExhaustionPerLevel = (float) skillsConfig.get("swordBeam", "exhaustionPerLevel", 0.1D,
 				"Exhaustion reduction per level for Sword Beam (subtracted from base)", 0.0D, 100.0D).getDouble();
+		swordBeamCooldownBase = skillsConfig.get("swordBeam", "cooldownBase", 20,
+				"Base cooldown in ticks after firing Sword Beam (20 = vanilla behavior)", 0, 1000).getInt();
+		swordBeamCooldownPerLevel = skillsConfig.get("swordBeam", "cooldownPerLevel", 1,
+				"Cooldown reduction per level for Sword Beam (1 = vanilla behavior)", 0, 1000).getInt();
+		swordBeamRequireFullCooldown = skillsConfig.get("swordBeam", "requireFullCooldown", false,
+				"Require the player's weapon attack cooldown to be fully recharged before firing Sword Beam").getBoolean(false);
 		/* Sword Basic */
 		swordBasicRangeBase = skillsConfig.get("swordBasic", "rangeBase", 6,
 				"Base targeting range for Basic Sword (6 = vanilla behavior)", 0, 100).getInt();
@@ -450,6 +459,9 @@ public class Config
 	public static int getSwordBeamRangePerLevel() { return swordBeamRangePerLevel; }
 	public static float getSwordBeamExhaustionBase() { return swordBeamExhaustionBase; }
 	public static float getSwordBeamExhaustionPerLevel() { return swordBeamExhaustionPerLevel; }
+	public static int getSwordBeamCooldownBase() { return swordBeamCooldownBase; }
+	public static int getSwordBeamCooldownPerLevel() { return swordBeamCooldownPerLevel; }
+	public static boolean getSwordBeamRequireFullCooldown() { return swordBeamRequireFullCooldown; }
 	public static int getSwordBasicRangeBase() { return swordBasicRangeBase; }
 	public static int getSwordBasicRangePerLevel() { return swordBasicRangePerLevel; }
 	public static int getSwordBasicComboSizeBase() { return swordBasicComboSizeBase; }
