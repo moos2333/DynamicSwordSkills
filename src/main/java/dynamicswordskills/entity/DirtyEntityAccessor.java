@@ -22,13 +22,18 @@
  *   and finally tries every candidate name at each level. Failures degrade
  *   silently instead of crashing, so optional optimizations like preserving
  *   the attack cooldown across a weapon switch no longer take down the game.
+ * - Added a failedResolves cache to prevent repeated reflection lookups and
+ *   provide a single warning log per missing field/method.
  */
 
 package dynamicswordskills.entity;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 
+import dynamicswordskills.DynamicSwordSkills;
 import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -47,7 +52,19 @@ public class DirtyEntityAccessor {
 	private static Method syncCurrentPlayItem;
 	private static Field ticksSinceLastSwing;
 
+	/** Caches field/method keys that have already failed to resolve, preventing repeated reflection attempts and log spam. */
+	private static final Set<String> failedResolves = new HashSet<>();
+
+	private static String getResolveKey(Class<?> owner, String[] candidates) {
+		return owner.getName() + "#" + String.join(",", candidates);
+	}
+
 	private static Field resolveField(Class<?> owner, String... candidates) {
+		String key = getResolveKey(owner, candidates);
+		if (failedResolves.contains(key)) {
+			return null;
+		}
+
 		for (String candidate : candidates) {
 			try {
 				Field field = ObfuscationReflectionHelper.findField(owner, candidate);
@@ -70,10 +87,18 @@ public class DirtyEntityAccessor {
 			}
 			current = current.getSuperclass();
 		}
+
+		failedResolves.add(key);
+		DynamicSwordSkills.logger.warn("Failed to resolve reflection field on " + owner.getSimpleName() + " with candidates: " + java.util.Arrays.toString(candidates) + ". Related optional features are disabled.");
 		return null;
 	}
 
 	private static Method resolveMethod(Class<?> owner, String[] candidates, Class<?> returnType, Class<?>... parameterTypes) {
+		String key = getResolveKey(owner, candidates) + "#" + returnType.getName();
+		if (failedResolves.contains(key)) {
+			return null;
+		}
+
 		for (String candidate : candidates) {
 			try {
 				Method method = ObfuscationReflectionHelper.findMethod(owner, candidate, returnType, parameterTypes);
@@ -96,6 +121,9 @@ public class DirtyEntityAccessor {
 			}
 			current = current.getSuperclass();
 		}
+
+		failedResolves.add(key);
+		DynamicSwordSkills.logger.warn("Failed to resolve reflection method on " + owner.getSimpleName() + " with candidates: " + java.util.Arrays.toString(candidates) + ". Related optional features are disabled.");
 		return null;
 	}
 
