@@ -18,7 +18,7 @@
 /*
  * Modified by moos2333 on 2026-10-16:
  * - Made base damage bonus, damage bonus per level, weapon damage factor,
- *   weapon damage factor per level and exhaustion configurable.
+ *   weapon damage factor per level, exhaustion, range, minimum distance and speed multipliers configurable.
  */
 
 package dynamicswordskills.skills;
@@ -152,14 +152,14 @@ public class Dash extends SkillActive
 		return 0.4F * level;
 	}
 
-	/** Range increases by 1 block per level */
+	/** Range increases per level based on config */
 	private double getRange() {
-		return (3.0D + level);
+		return Config.getDashRangeBase() + (level * Config.getDashRangePerLevel());
 	}
 
 	/** Minimum distance the player must cover before the dash is effective */
 	private double getMinDistance() {
-		return 2.0D - (0.2D * level);
+		return Config.getDashMinDistanceBase() + (level * Config.getDashMinDistancePerLevel());
 	}
 
 	@Override
@@ -243,7 +243,7 @@ public class Dash extends SkillActive
 				}
 			} else if (player.getEntityWorld().isRemote) {
 				if (trajectory != null) {
-					double bonus = 1.0D + (0.1D * level);
+					double bonus = Config.getDashSpeedMultiplierBase() + (level * Config.getDashSpeedMultiplierPerLevel());
 					double speed = bonus * player.getAttributeMap().getAttributeInstance(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue();
 					if (player.isInWater() || player.isInLava()) {
 						speed *= 0.15D;

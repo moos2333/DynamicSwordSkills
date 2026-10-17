@@ -26,7 +26,7 @@
  * - Added configurable Mortal Draw base damage bonus, damage bonus per level and exhaustion.
  * - Added configurable Basic Sword range, combo size and combo damage bonus.
  * - Added configurable Dash base damage bonus, damage bonus per level, weapon damage factor,
- *   weapon damage factor per level and exhaustion.
+ *   weapon damage factor per level, exhaustion, range, minimum distance and speed multipliers.
  */
 
 package dynamicswordskills.ref;
@@ -161,6 +161,12 @@ public class Config
 	private static float dashWeaponDamageFactorPerLevel;
 	private static float dashExhaustionBase;
 	private static float dashExhaustionPerLevel;
+	private static float dashRangeBase;
+	private static float dashRangePerLevel;
+	private static float dashMinDistanceBase;
+	private static float dashMinDistancePerLevel;
+	private static float dashSpeedMultiplierBase;
+	private static float dashSpeedMultiplierPerLevel;
 	/*================== DROPS =====================*/
 	private static boolean bonusOrbEnable;
 	private static int orbLootWeight;
@@ -374,6 +380,18 @@ public class Config
 				"Base exhaustion for Dash", 0.0D, 100.0D).getDouble();
 		dashExhaustionPerLevel = (float) skillsConfig.get("dash", "exhaustionPerLevel", 0.05D,
 				"Exhaustion reduction per level for Dash (subtracted from base)", 0.0D, 100.0D).getDouble();
+		dashRangeBase = (float) skillsConfig.get("dash", "rangeBase", 3.0D,
+				"Base max distance for Dash (3.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		dashRangePerLevel = (float) skillsConfig.get("dash", "rangePerLevel", 1.0D,
+				"Additional max distance per level for Dash (1.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		dashMinDistanceBase = (float) skillsConfig.get("dash", "minDistanceBase", 2.0D,
+				"Base minimum distance required for Dash to deal damage (2.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
+		dashMinDistancePerLevel = (float) skillsConfig.get("dash", "minDistancePerLevel", -0.2D,
+				"Min distance change per level for Dash (-0.2 = vanilla behavior)", -10.0D, 10.0D).getDouble();
+		dashSpeedMultiplierBase = (float) skillsConfig.get("dash", "speedMultiplierBase", 1.0D,
+				"Base speed multiplier for Dash relative to player's movement speed (1.0 = vanilla behavior)", 0.0D, 10.0D).getDouble();
+		dashSpeedMultiplierPerLevel = (float) skillsConfig.get("dash", "speedMultiplierPerLevel", 0.1D,
+				"Additional speed multiplier per level for Dash (0.1 = vanilla behavior)", 0.0D, 10.0D).getDouble();
 		if (skillsConfig.hasChanged()) {
 			skillsConfig.save();
 		}
@@ -500,6 +518,12 @@ public class Config
 	public static float getDashWeaponDamageFactorPerLevel() { return dashWeaponDamageFactorPerLevel; }
 	public static float getDashExhaustionBase() { return dashExhaustionBase; }
 	public static float getDashExhaustionPerLevel() { return dashExhaustionPerLevel; }
+	public static float getDashRangeBase() { return dashRangeBase; }
+	public static float getDashRangePerLevel() { return dashRangePerLevel; }
+	public static float getDashMinDistanceBase() { return dashMinDistanceBase; }
+	public static float getDashMinDistancePerLevel() { return dashMinDistancePerLevel; }
+	public static float getDashSpeedMultiplierBase() { return dashSpeedMultiplierBase; }
+	public static float getDashSpeedMultiplierPerLevel() { return dashSpeedMultiplierPerLevel; }
 	public static float getHealthAllowance(int level) {
 		return (requireFullHealth ? 0.0F : (0.6F * level));
 	}
