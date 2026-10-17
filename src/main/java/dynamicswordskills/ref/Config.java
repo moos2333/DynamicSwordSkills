@@ -20,7 +20,7 @@
  * - Split skill-related options into a separate config file: DynamicSwordSkills-skills.cfg
  * - Added configurable Armor Break base damage bonus, damage bonus and exhaustion.
  * - Added configurable Sword Beam health allowance, damage factors, range, exhaustion, cooldown and full cooldown requirement.
- * - Added configurable Back Slice base damage bonus, damage bonus and exhaustion.
+ * - Added configurable Back Slice base damage bonus, damage bonus, exhaustion, and disarmor chance multiplier.
  * - Added configurable Leaping Blow base damage bonus, damage bonus, damage multiplier, lifespan, range and exhaustion.
  * - Added configurable Ending Blow base damage bonus, damage bonus per level, duration formula, attack window and exhaustion.
  * - Added configurable Mortal Draw base damage bonus, damage bonus per level and exhaustion.
@@ -135,6 +135,7 @@ public class Config
 	private static float backSliceDamageBonusPerLevel;
 	private static float backSliceExhaustionBase;
 	private static float backSliceExhaustionPerLevel;
+	private static float backSliceDisarmorChanceMultiplier;
 	private static float leapingBlowBaseDamageBonus;
 	private static float leapingBlowDamageBonusPerLevel;
 	private static float leapingBlowDamageMultiplierPerLevel;
@@ -317,6 +318,8 @@ public class Config
 				"Base exhaustion for Back Slice", 0.0D, 100.0D).getDouble();
 		backSliceExhaustionPerLevel = (float) skillsConfig.get("backSlice", "exhaustionPerLevel", 0.1D,
 				"Exhaustion reduction per level for Back Slice (subtracted from base)", 0.0D, 100.0D).getDouble();
+		backSliceDisarmorChanceMultiplier = (float) skillsConfig.get("backSlice", "disarmorChanceMultiplier", 1.0D,
+				"Multiplier applied to the final disarmor chance (0.0 = disabled, 1.0 = vanilla behavior)", 0.0D, 10.0D).getDouble();
 		/* Leaping Blow */
 		leapingBlowBaseDamageBonus = (float) skillsConfig.get("leapingBlow", "baseDamageBonus", 0.0D,
 				"Base flat damage bonus for Leaping Blow (0.0 = vanilla behavior)", 0.0D, 100.0D).getDouble();
@@ -471,6 +474,7 @@ public class Config
 	public static float getBackSliceDamageBonusPerLevel() { return backSliceDamageBonusPerLevel; }
 	public static float getBackSliceExhaustionBase() { return backSliceExhaustionBase; }
 	public static float getBackSliceExhaustionPerLevel() { return backSliceExhaustionPerLevel; }
+	public static float getBackSliceDisarmorChanceMultiplier() { return backSliceDisarmorChanceMultiplier; }
 	public static float getLeapingBlowBaseDamageBonus() { return leapingBlowBaseDamageBonus; }
 	public static float getLeapingBlowDamageBonusPerLevel() { return leapingBlowDamageBonusPerLevel; }
 	public static float getLeapingBlowDamageMultiplierPerLevel() { return leapingBlowDamageMultiplierPerLevel; }
